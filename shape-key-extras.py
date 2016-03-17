@@ -20,12 +20,10 @@ bl_info = {
     "name": "Shape Key Extras",
     "description": "Shape Key Extras",
     "author": "Christian Brinkmann",
-    "version": (0, 0, 6),
-    "blender": (2, 74, 0),
+    "version": (0, 0, 7),
+    "blender": (2, 76, 0),
     "location": "Properties > Object Data > Shape Keys",
-    "warning": "",
-    "wiki_url": "",
-    "tracker_url": "",
+    "tracker_url": "https://github.com/p2or/blender-shapekeyextras/issues",
     "category": "Mesh"
 }
 
@@ -235,6 +233,25 @@ class RandomizeValueButton (Operator):
         self.report({'INFO'}, "Values for Shape Keys generated")
         return {'FINISHED'}
 
+class SetRangeButton (Operator):
+    bl_idname = "shapekeyextras.set_range"
+    bl_label = "Set Shape Key Range"
+    bl_description = "Set Range Values for Shape Keys"
+
+    def execute(self, context):
+        scn = context.scene
+        ske = scn.shape_key_extras
+        
+        shape_keys = (shape_key_selection(self, context))
+        for i in shape_keys:
+            if i != 'Basis':
+                shapekey = context.object.data.shape_keys.key_blocks[i]
+                shapekey.slider_min = ske.random_min
+                shapekey.slider_max = ske.random_max
+                
+        self.report({'INFO'}, "Range Values adjusted")
+        return {'FINISHED'}
+    
 class ApplyValueButton (Operator):
     bl_idname = "shapekeyextras.set_values"
     bl_label = "Set Shape Key Values"
@@ -329,9 +346,8 @@ class DeleteAllKeyframesButton (Operator):
                         sk_data.key_blocks[i].keyframe_delete(data_path="value", frame=f) #returns a bool
                     else:
                         break
-                        
+                      
         self.report({'INFO'}, "All Keyframes deleted")
-
         return {'FINISHED'}
     
     
@@ -383,7 +399,8 @@ def draw_shapekey_extras(self, context):
     rowsub.prop(ske, "random_min")
     rowsub.prop(ske, "random_max")
     col.operator("shapekeyextras.randomize", icon="KEYINGSET")
-   
+    col.operator("shapekeyextras.set_range", icon="SORTSIZE")
+     
     row = layout.row()
     col = layout.column(align=True)
     rowsub = col.row(align=True)
