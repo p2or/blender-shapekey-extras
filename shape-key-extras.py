@@ -20,7 +20,7 @@ bl_info = {
     "name": "Shape Key Extras",
     "description": "Shape Key Extras",
     "author": "Christian Brinkmann",
-    "version": (0, 0, 7),
+    "version": (0, 0, 8),
     "blender": (2, 76, 0),
     "location": "Properties > Object Data > Shape Keys",
     "tracker_url": "https://github.com/p2or/blender-shapekeyextras/issues",
@@ -131,7 +131,7 @@ class ShapeKeyExtrasSettings(PropertyGroup):
         default = "Basis, #, *"
         )
     only = StringProperty (
-        name = "Include only",
+        name = "Only",
         description = "Include by first character",
         default = ""
         )
@@ -151,6 +151,7 @@ class EnableAllButton (Operator):
     bl_idname = "shapekeyextras.enable_all"
     bl_label = "Enable All"
     bl_description = "Enable all Shape Keys"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         scn = context.scene
@@ -168,6 +169,7 @@ class DisableAllButton (Operator):
     bl_idname = "shapekeyextras.disable_all"
     bl_label = "Disable All"
     bl_description = "Disable all Shape Keys"
+    bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
         scn = context.scene
@@ -185,6 +187,7 @@ class ToggleAllButton (Operator):
     bl_idname = "shapekeyextras.toggle_mute"
     bl_label = "Toggle Visibility"
     bl_description = "Toggle Mute of all Shape Keys"
+    bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
         scn = context.scene
@@ -202,6 +205,7 @@ class RandomEnableButton (Operator):
     bl_idname = "shapekeyextras.random_visibility"
     bl_label = "Random Visibility"
     bl_description = "Random Visibility for all Shape Keys"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         scn = context.scene
@@ -219,6 +223,7 @@ class RandomizeValueButton (Operator):
     bl_idname = "shapekeyextras.randomize"
     bl_label = "Randomize Shape Key Values"
     bl_description = "Randomize Shape Key Values"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         scn = context.scene
@@ -237,6 +242,7 @@ class SetRangeButton (Operator):
     bl_idname = "shapekeyextras.set_range"
     bl_label = "Set Shape Key Range"
     bl_description = "Set Range Values for Shape Keys"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         scn = context.scene
@@ -256,6 +262,7 @@ class ApplyValueButton (Operator):
     bl_idname = "shapekeyextras.set_values"
     bl_label = "Set Shape Key Values"
     bl_description = "Apply a static Value to Shape Keys"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         scn = context.scene
@@ -274,6 +281,7 @@ class RemoveDriversFromShapeKeysButton (Operator):
     bl_idname = "shapekeyextras.remove_drivers"
     bl_label = "Remove Drivers"
     bl_description = "Remove Drivers from Shapekeys"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         shape_keys = (shape_key_selection(self, context))
@@ -288,6 +296,7 @@ class AddDriversToShapeKeysButton (Operator):
     bl_idname = "shapekeyextras.add_drivers"
     bl_label = "Add Drivers"
     bl_description = "Add Drivers to Shapekeys"
+    bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):       
         shape_keys = (shape_key_selection(self, context))
@@ -303,6 +312,7 @@ class InsertKeyframeButton (Operator):
     bl_idname = "shapekeyextras.insert_keyframe"
     bl_label = "Insert Keyframe"
     bl_description = "Insert Keyframe for value"
+    bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):       
         shape_keys = (shape_key_selection(self, context))
@@ -317,6 +327,7 @@ class DeleteKeyframeButton (Operator):
     bl_idname = "shapekeyextras.delete_keyframe"
     bl_label = "Delete current Keyframe"
     bl_description = "Delete Keyframe for value"
+    bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):       
         shape_keys = (shape_key_selection(self, context))
@@ -333,6 +344,7 @@ class DeleteAllKeyframesButton (Operator):
     bl_idname = "shapekeyextras.delete_all_keyframes"
     bl_label = "Delete all Keyframes"
     bl_description = "Delete all Keyframes for value"
+    bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
         sce = context.scene       
@@ -350,17 +362,40 @@ class DeleteAllKeyframesButton (Operator):
         self.report({'INFO'}, "All Keyframes deleted")
         return {'FINISHED'}
     
-    
+
+class RemoveSelectedKeysButton (Operator):
+    bl_idname = "shapekeyextras.remove_selection"
+    bl_label = "Delete Shape Keys"
+    bl_description = "Remove selected Shape Keys"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        scn = context.scene
+        ske = scn.shape_key_extras
+        
+        shape_keys = (shape_key_selection(self, context))
+        if len(shape_keys) > 0:
+            for i in shape_keys:            
+                shapekey_index = context.object.data.shape_keys.key_blocks.keys().index(i)
+                context.object.active_shape_key_index = shapekey_index
+                bpy.ops.object.shape_key_remove()
+            
+            self.report({'INFO'}, "Selected Shape Keys removed")     
+            return {'FINISHED'}
+        else:
+            self.report({'INFO'}, "Nothing to remove")     
+            return {'FINISHED'}
+        
 class PrintShapeKeySelectionButton (Operator):
     bl_idname = "shapekeyextras.print_shape_key_selection"
-    bl_label = "Print Selection to the Console"
+    bl_label = "Print Selection to Console"
     bl_description = "Print Shape Key Selection to the Console"
+    bl_options = {'INTERNAL'}
     
     def execute(self, context):       
         shape_keys = (shape_key_selection(self, context))
-        print (shape_keys)
-                
-        self.report({'INFO'}, "Shape Keys printed")
+        print ("Selection:", ', '.join(shape_keys))
+        self.report({'INFO'}, "Shape Keys printed to console")
         return {'FINISHED'}
     
 # -------------------------------------------------------------------
@@ -386,7 +421,7 @@ def draw_shapekey_extras(self, context):
     rowsub.operator("shapekeyextras.random_visibility", icon="RESTRICT_VIEW_OFF")
     
     row = layout.row()   
-    row.label("Set Attributes:")
+    row.label("Set Attributes for:")
     col = layout.column(align=True)
     row = col.row(align=True)
     row.prop(ske, "selection", expand=True)
@@ -417,14 +452,19 @@ def draw_shapekey_extras(self, context):
     rowsub.operator("shapekeyextras.remove_drivers", icon="PANEL_CLOSE")
     
     row = layout.row()
+    row.label("Advanced Selection:")
     col = layout.column(align=True)
     row = col.row(align=True)
     col.prop(ske, "exclude")
     col = layout.column(align=True)
     col.prop(ske, "only")
-    
-    #row = layout.row()
-    #row.operator("shapekeyextras.print_shape_key_selection")
+
+    row = layout.row()
+    col = layout.column(align=True)
+    rowsub = col.row(align=True)
+    rowsub.operator("shapekeyextras.print_shape_key_selection", icon="CONSOLE")
+    rowsub = col.row(align=True)
+    rowsub.operator("shapekeyextras.remove_selection", icon="CANCEL")
     layout.separator()
 
 # -------------------------------------------------------------------
