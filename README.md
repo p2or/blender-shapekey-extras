@@ -2,8 +2,10 @@
 
 A Blender Add-on to manipulate [Shape Keys](https://www.blender.org/manual/animation/shape_keys.html).
 
+![](http://i.stack.imgur.com/Bp4AY.png)
 
-![](http://i.stack.imgur.com/WaxS7.png)
+
+
 
 #### Installation
 
