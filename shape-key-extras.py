@@ -45,6 +45,10 @@ from bpy.types import (Operator,
 # helper    
 # -------------------------------------------------------------------
 
+def shape_keys_exist(obj):
+    res = getattr(obj.data, 'shape_keys', None)
+    return True if res is not None else False
+
 def search_chars(char_sequence, name):
     if char_sequence:
         
@@ -157,12 +161,16 @@ class EnableAllButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        shape_keys = (shape_key_selection(self, context))
-        for i in shape_keys:
-            shapekey = context.object.data.shape_keys.key_blocks[i]
-            shapekey.mute = False
+        if shape_keys_exist(context.object):
+            shape_keys = (shape_key_selection(self, context))
+            for i in shape_keys:
+                shapekey = context.object.data.shape_keys.key_blocks[i]
+                shapekey.mute = False
 
-        self.report({'INFO'}, "All Shape Keys enabled")     
+            self.report({'INFO'}, "All Shape Keys enabled")
+        else: 
+             self.report({'WARNING'}, "No shape keys found.")  
+             
         return {'FINISHED'}
 
 class DisableAllButton (Operator):
@@ -175,12 +183,16 @@ class DisableAllButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        shape_keys = (shape_key_selection(self, context))
-        for i in shape_keys:
-            shapekey = context.object.data.shape_keys.key_blocks[i]
-            shapekey.mute = True
+        if shape_keys_exist(context.object):
+            shape_keys = (shape_key_selection(self, context))
+            for i in shape_keys:
+                shapekey = context.object.data.shape_keys.key_blocks[i]
+                shapekey.mute = True
 
-        self.report({'INFO'}, "All Shape Keys disabled")        
+            self.report({'INFO'}, "All Shape Keys disabled")        
+        else: 
+             self.report({'WARNING'}, "No shape keys found.")
+             
         return {'FINISHED'}
    
 class ToggleAllButton (Operator):
@@ -193,12 +205,15 @@ class ToggleAllButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        shape_keys = (shape_key_selection(self, context))
-        for i in shape_keys:
-            shapekey = context.object.data.shape_keys.key_blocks[i]
-            shapekey.mute = not shapekey.mute
+        if shape_keys_exist(context.object):
+            shape_keys = (shape_key_selection(self, context))
+            for i in shape_keys:
+                shapekey = context.object.data.shape_keys.key_blocks[i]
+                shapekey.mute = not shapekey.mute
 
-        self.report({'INFO'}, "Enabled Shape Keys disabled and Disabled Shape Keys enabled")          
+            self.report({'INFO'}, "Enabled Shape Keys disabled and Disabled Shape Keys enabled")
+        else: 
+             self.report({'WARNING'}, "No shape keys found.")
         return {'FINISHED'}
     
 class RandomEnableButton (Operator):
@@ -211,12 +226,15 @@ class RandomEnableButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        shape_keys = (shape_key_selection(self, context))
-        for i in shape_keys:
-            shapekey = context.object.data.shape_keys.key_blocks[i]
-            shapekey.mute = bool(random.getrandbits(1))
+        if shape_keys_exist(context.object):
+            shape_keys = (shape_key_selection(self, context))
+            for i in shape_keys:
+                shapekey = context.object.data.shape_keys.key_blocks[i]
+                shapekey.mute = bool(random.getrandbits(1))
 
-        self.report({'INFO'}, "Ramdomized Shape Key Visibility")          
+            self.report({'INFO'}, "Ramdomized Shape Key Visibility")
+        else:
+            self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
 
 class RandomizeValueButton (Operator):
@@ -229,13 +247,16 @@ class RandomizeValueButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        shape_keys = (shape_key_selection(self, context))
-        for i in shape_keys:
-            if i != 'Basis':
-                shapekey = context.object.data.shape_keys.key_blocks[i]
-                shapekey.value = random.uniform(ske.random_min, ske.random_max)
+        if shape_keys_exist(context.object):
+            shape_keys = (shape_key_selection(self, context))
+            for i in shape_keys:
+                if i != 'Basis':
+                    shapekey = context.object.data.shape_keys.key_blocks[i]
+                    shapekey.value = random.uniform(ske.random_min, ske.random_max)
 
-        self.report({'INFO'}, "Values for Shape Keys generated")
+            self.report({'INFO'}, "Values for Shape Keys generated")
+        else:
+            self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
 
 class SetRangeButton (Operator):
@@ -248,14 +269,17 @@ class SetRangeButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        shape_keys = (shape_key_selection(self, context))
-        for i in shape_keys:
-            if i != 'Basis':
-                shapekey = context.object.data.shape_keys.key_blocks[i]
-                shapekey.slider_min = ske.random_min
-                shapekey.slider_max = ske.random_max
-                
-        self.report({'INFO'}, "Range Values adjusted")
+        if shape_keys_exist(context.object):
+            shape_keys = (shape_key_selection(self, context))
+            for i in shape_keys:
+                if i != 'Basis':
+                    shapekey = context.object.data.shape_keys.key_blocks[i]
+                    shapekey.slider_min = ske.random_min
+                    shapekey.slider_max = ske.random_max
+                    
+            self.report({'INFO'}, "Range Values adjusted")
+        else:
+            self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
     
 class ApplyValueButton (Operator):
@@ -268,13 +292,16 @@ class ApplyValueButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        shape_keys = (shape_key_selection(self, context))
-        for i in shape_keys:
-            if i != 'Basis':
-                shapekey = context.object.data.shape_keys.key_blocks[i]
-                shapekey.value = ske.value
-                
-        self.report({'INFO'}, "Value assigned to Shape Keys")        
+        if shape_keys_exist(context.object):
+            shape_keys = (shape_key_selection(self, context))
+            for i in shape_keys:
+                if i != 'Basis':
+                    shapekey = context.object.data.shape_keys.key_blocks[i]
+                    shapekey.value = ske.value
+                    
+            self.report({'INFO'}, "Value assigned to Shape Keys")        
+        else:
+            self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
     
 class RemoveDriversFromShapeKeysButton (Operator):
@@ -284,12 +311,15 @@ class RemoveDriversFromShapeKeysButton (Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        shape_keys = (shape_key_selection(self, context))
-        for i in shape_keys:
-            if i != 'Basis':
-                context.object.data.shape_keys.key_blocks[i].driver_remove("value")
-        
-        self.report({'INFO'}, "Drivers Removed")
+        if shape_keys_exist(context.object):
+            shape_keys = (shape_key_selection(self, context))
+            for i in shape_keys:
+                if i != 'Basis':
+                    context.object.data.shape_keys.key_blocks[i].driver_remove("value")
+            
+            self.report({'INFO'}, "Drivers Removed")
+        else:
+            self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
      
 class AddDriversToShapeKeysButton (Operator):
@@ -298,13 +328,16 @@ class AddDriversToShapeKeysButton (Operator):
     bl_description = "Add Drivers to Shapekeys"
     bl_options = {'REGISTER', 'UNDO'}
     
-    def execute(self, context):       
-        shape_keys = (shape_key_selection(self, context))
-        for i in shape_keys:
-            if i != 'Basis':
-                context.object.data.shape_keys.key_blocks[i].driver_add("value")
-        
-        self.report({'INFO'}, "Drivers added")
+    def execute(self, context):
+        if shape_keys_exist(context.object):      
+            shape_keys = (shape_key_selection(self, context))
+            for i in shape_keys:
+                if i != 'Basis':
+                    context.object.data.shape_keys.key_blocks[i].driver_add("value")
+            
+            self.report({'INFO'}, "Drivers added")
+        else:
+            self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
 
 # http://stackoverflow.com/questions/7977550/how-to-change-the-value-of-the-shape-key-in-blender-script
@@ -314,13 +347,16 @@ class InsertKeyframeButton (Operator):
     bl_description = "Insert Keyframe for value"
     bl_options = {'REGISTER', 'UNDO'}
     
-    def execute(self, context):       
-        shape_keys = (shape_key_selection(self, context))
-        for i in shape_keys:
-            if i != 'Basis':
-                context.object.data.shape_keys.key_blocks[i].keyframe_insert(data_path="value")
-        
-        self.report({'INFO'}, "Keyframes inserted")
+    def execute(self, context):
+        if shape_keys_exist(context.object):       
+            shape_keys = (shape_key_selection(self, context))
+            for i in shape_keys:
+                if i != 'Basis':
+                    context.object.data.shape_keys.key_blocks[i].keyframe_insert(data_path="value")
+            
+            self.report({'INFO'}, "Keyframes inserted")
+        else:
+            self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
 
 class DeleteKeyframeButton (Operator):
@@ -329,13 +365,16 @@ class DeleteKeyframeButton (Operator):
     bl_description = "Delete Keyframe for value"
     bl_options = {'REGISTER', 'UNDO'}
     
-    def execute(self, context):       
-        shape_keys = (shape_key_selection(self, context))
-        for i in shape_keys:
-            if i != 'Basis':
-                context.object.data.shape_keys.key_blocks[i].keyframe_delete(data_path="value")
-        
-        self.report({'INFO'}, "Keyframes deleted")
+    def execute(self, context):
+        if shape_keys_exist(context.object):       
+            shape_keys = (shape_key_selection(self, context))
+            for i in shape_keys:
+                if i != 'Basis':
+                    context.object.data.shape_keys.key_blocks[i].keyframe_delete(data_path="value")
+            
+            self.report({'INFO'}, "Keyframes deleted")
+        else:
+            self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
 
 
@@ -347,19 +386,22 @@ class DeleteAllKeyframesButton (Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        sce = context.scene       
-        shape_keys = (shape_key_selection(self, context))
-        sk_data = context.object.data.shape_keys
+        sce = context.scene
         
-        for i in shape_keys:
-            if i != 'Basis':
-                for f in range(sce.frame_start, sce.frame_end+1):
-                    if sk_data.animation_data.action != None:
-                        sk_data.key_blocks[i].keyframe_delete(data_path="value", frame=f) #returns a bool
-                    else:
-                        break
+        if shape_keys_exist(context.object):
+            shape_keys = (shape_key_selection(self, context))
+            sk_data = context.object.data.shape_keys
+            for i in shape_keys:
+                if i != 'Basis':
+                    for f in range(sce.frame_start, sce.frame_end+1):
+                        if sk_data.animation_data.action != None:
+                            sk_data.key_blocks[i].keyframe_delete(data_path="value", frame=f) #returns a bool
+                        else:
+                            break
                       
-        self.report({'INFO'}, "All Keyframes deleted")
+            self.report({'INFO'}, "All Keyframes deleted")
+        else:
+            self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
     
 
@@ -373,29 +415,34 @@ class RemoveSelectedKeysButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        shape_keys = (shape_key_selection(self, context))
-        if len(shape_keys) > 0:
-            for i in shape_keys:            
-                shapekey_index = context.object.data.shape_keys.key_blocks.keys().index(i)
-                context.object.active_shape_key_index = shapekey_index
-                bpy.ops.object.shape_key_remove()
-            
-            self.report({'INFO'}, "Selected Shape Keys removed")     
-            return {'FINISHED'}
+        if shape_keys_exist(context.object):
+            shape_keys = (shape_key_selection(self, context))
+            if len(shape_keys) > 0:
+                for i in shape_keys:            
+                    shapekey_index = context.object.data.shape_keys.key_blocks.keys().index(i)
+                    context.object.active_shape_key_index = shapekey_index
+                    bpy.ops.object.shape_key_remove()
+                              
+                self.report({'INFO'}, "Selected Shape Keys removed")
+            else:
+                self.report({'INFO'}, "Nothing to remove")
         else:
-            self.report({'INFO'}, "Nothing to remove")     
-            return {'FINISHED'}
-        
+            self.report({'WARNING'}, "No shape keys found.")    
+        return {'FINISHED'}
+          
 class PrintShapeKeySelectionButton (Operator):
     bl_idname = "shapekeyextras.print_shape_key_selection"
     bl_label = "Print Selection to Console"
     bl_description = "Print Shape Key Selection to the Console"
     bl_options = {'INTERNAL'}
     
-    def execute(self, context):       
-        shape_keys = (shape_key_selection(self, context))
-        print ("Selection:", ', '.join(shape_keys))
-        self.report({'INFO'}, "Shape Keys printed to console")
+    def execute(self, context):
+        if shape_keys_exist(context.object):       
+            shape_keys = (shape_key_selection(self, context))
+            self.report({'INFO'}, "Shape Keys printed to console")
+            print ("Selection:", ', '.join(shape_keys))
+        else:
+            self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
     
 # -------------------------------------------------------------------
