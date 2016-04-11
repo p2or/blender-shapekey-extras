@@ -20,7 +20,7 @@ bl_info = {
     "name": "Shape Key Extras",
     "description": "Shape Key Extras",
     "author": "Christian Brinkmann",
-    "version": (0, 0, 8),
+    "version": (0, 0, 9),
     "blender": (2, 76, 0),
     "location": "Properties > Object Data > Shape Keys",
     "tracker_url": "https://github.com/p2or/blender-shapekeyextras/issues",
@@ -501,10 +501,10 @@ def draw_shapekey_extras(self, context):
     row = layout.row()
     row.label("Advanced Selection:")
     col = layout.column(align=True)
-    row = col.row(align=True)
-    col.prop(ske, "exclude")
-    col = layout.column(align=True)
-    col.prop(ske, "only")
+    rowsub = col.row(align=True)
+    rowsub.prop(ske, "exclude")
+    rowsub = col.column(align=True)
+    rowsub.prop(ske, "only")
 
     row = layout.row()
     col = layout.column(align=True)
