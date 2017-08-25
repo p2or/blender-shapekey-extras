@@ -20,7 +20,7 @@ bl_info = {
     "name": "Shape Key Extras",
     "description": "Shape Key Extras",
     "author": "Christian Brinkmann",
-    "version": (0, 0, 9),
+    "version": (0, 1, 4),
     "blender": (2, 76, 0),
     "location": "Properties > Object Data > Shape Keys",
     "tracker_url": "https://github.com/p2or/blender-shapekeyextras/issues",
@@ -35,19 +35,19 @@ from bpy.props import (IntProperty,
                        FloatProperty,
                        StringProperty,
                        PointerProperty,
+                       CollectionProperty,
                        EnumProperty
                        )
 
 from bpy.types import (Operator,
-                       PropertyGroup)
+                       Panel,
+                       UIList,
+                       PropertyGroup
+                       )
 
 # -------------------------------------------------------------------
 # helper    
 # -------------------------------------------------------------------
-
-def shape_keys_exist(obj):
-    res = getattr(obj.data, 'shape_keys', None)
-    return True if res is not None else False
 
 def search_chars(char_sequence, name):
     if char_sequence:
@@ -101,7 +101,7 @@ def shape_key_selection(op, context):
 # properties    
 # -------------------------------------------------------------------
 
-class ShapeKeyExtrasSettings(PropertyGroup):
+class SkeSettings(PropertyGroup):
 
     value = FloatProperty(
         name = "Value",
@@ -147,6 +147,14 @@ class ShapeKeyExtrasSettings(PropertyGroup):
                 ('DISABLED', "Disabled", ""),
                 ),default='ALL')
 
+    vg_uilist_index = IntProperty()
+
+
+class SkePropertyCollection(PropertyGroup):
+    
+    collection_id = IntProperty()
+
+
 # -------------------------------------------------------------------
 # operators    
 # -------------------------------------------------------------------
@@ -161,7 +169,7 @@ class EnableAllButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        if shape_keys_exist(context.object):
+        if context.object.data.shape_keys:
             shape_keys = (shape_key_selection(self, context))
             for i in shape_keys:
                 shapekey = context.object.data.shape_keys.key_blocks[i]
@@ -183,7 +191,7 @@ class DisableAllButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        if shape_keys_exist(context.object):
+        if context.object.data.shape_keys:
             shape_keys = (shape_key_selection(self, context))
             for i in shape_keys:
                 shapekey = context.object.data.shape_keys.key_blocks[i]
@@ -205,7 +213,7 @@ class ToggleAllButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        if shape_keys_exist(context.object):
+        if context.object.data.shape_keys:
             shape_keys = (shape_key_selection(self, context))
             for i in shape_keys:
                 shapekey = context.object.data.shape_keys.key_blocks[i]
@@ -226,7 +234,7 @@ class RandomEnableButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        if shape_keys_exist(context.object):
+        if context.object.data.shape_keys:
             shape_keys = (shape_key_selection(self, context))
             for i in shape_keys:
                 shapekey = context.object.data.shape_keys.key_blocks[i]
@@ -247,7 +255,7 @@ class RandomizeValueButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        if shape_keys_exist(context.object):
+        if context.object.data.shape_keys:
             shape_keys = (shape_key_selection(self, context))
             for i in shape_keys:
                 if i != 'Basis':
@@ -269,7 +277,7 @@ class SetRangeButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        if shape_keys_exist(context.object):
+        if context.object.data.shape_keys:
             shape_keys = (shape_key_selection(self, context))
             for i in shape_keys:
                 if i != 'Basis':
@@ -292,7 +300,7 @@ class ApplyValueButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        if shape_keys_exist(context.object):
+        if context.object.data.shape_keys:
             shape_keys = (shape_key_selection(self, context))
             for i in shape_keys:
                 if i != 'Basis':
@@ -311,7 +319,7 @@ class RemoveDriversFromShapeKeysButton (Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        if shape_keys_exist(context.object):
+        if context.object.data.shape_keys:
             shape_keys = (shape_key_selection(self, context))
             for i in shape_keys:
                 if i != 'Basis':
@@ -329,7 +337,7 @@ class AddDriversToShapeKeysButton (Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        if shape_keys_exist(context.object):      
+        if context.object.data.shape_keys:      
             shape_keys = (shape_key_selection(self, context))
             for i in shape_keys:
                 if i != 'Basis':
@@ -348,7 +356,7 @@ class InsertKeyframeButton (Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        if shape_keys_exist(context.object):       
+        if context.object.data.shape_keys:       
             shape_keys = (shape_key_selection(self, context))
             for i in shape_keys:
                 if i != 'Basis':
@@ -366,7 +374,7 @@ class DeleteKeyframeButton (Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        if shape_keys_exist(context.object):       
+        if context.object.data.shape_keys:       
             shape_keys = (shape_key_selection(self, context))
             for i in shape_keys:
                 if i != 'Basis':
@@ -388,7 +396,7 @@ class DeleteAllKeyframesButton (Operator):
     def execute(self, context):
         sce = context.scene
         
-        if shape_keys_exist(context.object):
+        if context.object.data.shape_keys:
             shape_keys = (shape_key_selection(self, context))
             sk_data = context.object.data.shape_keys
             for i in shape_keys:
@@ -415,7 +423,7 @@ class RemoveSelectedKeysButton (Operator):
         scn = context.scene
         ske = scn.shape_key_extras
         
-        if shape_keys_exist(context.object):
+        if context.object.data.shape_keys:
             shape_keys = (shape_key_selection(self, context))
             if len(shape_keys) > 0:
                 for i in shape_keys:            
@@ -437,82 +445,318 @@ class PrintShapeKeySelectionButton (Operator):
     bl_options = {'INTERNAL'}
     
     def execute(self, context):
-        if shape_keys_exist(context.object):       
+        if context.object.data.shape_keys:       
             shape_keys = (shape_key_selection(self, context))
             self.report({'INFO'}, "Shape Keys printed to console")
             print ("Selection:", ', '.join(shape_keys))
         else:
             self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
+
+
+class MergeVertexGroupUiList(Operator):
+    bl_idname = "shapekeyextras.merge_vg_ui_list"
+    bl_label = "Merge Groups"
+    bl_description = "Merge all Groups in List"
+    bl_options = {'REGISTER', 'UNDO'}
     
+    @classmethod
+    def poll(cls, context):
+        return (context.active_object.type == 'MESH' and 
+            context.mode == 'OBJECT' and
+            len(context.active_object.vertex_groups) > 1)
+    
+    def execute(self, context):
+        group_input = {i.name for i in context.scene.shape_key_extras_collection if i.name}
+        ob = bpy.context.active_object
+
+        group_lookup = {g.index: g.name for g in ob.vertex_groups}
+        group_candidates = {n for n in group_lookup.values() if n in group_input}
+        
+        if len(group_candidates) > 1:
+            # iterate through the vertices and sum the weights per group
+            vertex_weights = {}
+            for vert in ob.data.vertices:
+                if len(vert.groups):  
+                    for item in vert.groups:
+                        vg = ob.vertex_groups[item.group]
+                        if vg.name in group_candidates:
+                            if vert.index in vertex_weights:    
+                                vertex_weights[vert.index] += vg.weight(vert.index)
+                            else:
+                                vertex_weights[vert.index] = vg.weight(vert.index)
+                        
+            # create new vertex group
+            vgroup = ob.vertex_groups.new(name="+".join(group_candidates))
+            
+            # add the values to the group                       
+            for key, value in vertex_weights.items():
+                vgroup.add([key], value ,'REPLACE') #'ADD','SUBTRACT'
+            
+            self.report({'INFO'}, ('Merged: %s' % (', '.join(group_candidates))))
+            return{'FINISHED'}
+        
+        else:
+            self.report({'WARNING'}, "No Groups to merge.")
+            return{'CANCELLED'}
+
+
+class PrintVertexGroupUiList(Operator):
+    bl_idname = "shapekeyextras.print_vg_ui_list"
+    bl_label = "Print Selection"
+    bl_description = "Print Vertex Group Selection to Console"
+    bl_options = {'INTERNAL'}
+
+    def execute(self, context):
+        selection = {i.name for i in context.scene.shape_key_extras_collection if i.name}
+        if selection:
+            self.report({'INFO'}, ", ".join(selection)) 
+        else:
+            self.report({'INFO'}, "Nothing in Selection")
+        return{'FINISHED'}
+
+
+class AddAllGroupsToUiList(Operator):
+    bl_idname = "shapekeyextras.add_all_vg_ui_list"
+    bl_label = "Add All Groups"
+    bl_description = "Add all Vertex Groups to the List"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        scn = context.scene
+        ske = scn.shape_key_extras
+        colprop = scn.shape_key_extras_collection
+        idx = ske.vg_uilist_index
+                    
+        try:
+            item = colprop[idx]
+        except IndexError:
+            pass
+        
+        for idx, item in enumerate(colprop):
+            if not item.name:
+                colprop.remove(idx)
+                
+        items = 0
+        for g in context.active_object.vertex_groups:
+            if g.name not in scn.shape_key_extras_collection:
+                item = colprop.add()
+                item.collection_id = len(colprop)
+                item.name = g.name
+                ske.vg_uilist_index = (len(colprop)-1)
+                items += 1
+        
+        if items:
+            info = '%s Vertex Groups added to the list' % (items)
+        else:
+            info = 'Nothing added'
+        
+        self.report({'INFO'}, info)
+        return{'FINISHED'}
+
+
+class ClearVertexGroupUiList(Operator):
+    bl_idname = "shapekeyextras.clear_vg_ui_list"
+    bl_label = "Clear List"
+    bl_description = "Clear all Items in Vertex Group list"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        scn = context.scene
+        ske = scn.shape_key_extras
+        coll = scn.shape_key_extras_collection
+                
+        if len(coll) > 0:
+             # reverse range to remove last item first
+            for i in range(len(coll)-1,-1,-1):
+                coll.remove(i)
+            self.report({'INFO'}, "All items removed")
+        else:
+            self.report({'INFO'}, "Nothing to remove")   
+        return{'FINISHED'}
+
+
 # -------------------------------------------------------------------
 # ui    
 # -------------------------------------------------------------------
 
-def draw_shapekey_extras(self, context):
-
-    scn = context.scene
-    layout = self.layout
-    ske = scn.shape_key_extras
-
-    layout.separator()
-
-    row = layout.row()
-    row.label("Visibility:")
-    col = layout.column(align=True)
-    rowsub = col.row(align=True)
-    rowsub.operator("shapekeyextras.enable_all", icon="RESTRICT_VIEW_OFF")
-    rowsub.operator("shapekeyextras.toggle_mute", icon="FILE_REFRESH")
-    rowsub = col.row(align=True)
-    rowsub.operator("shapekeyextras.disable_all", icon="RESTRICT_VIEW_ON")
-    rowsub.operator("shapekeyextras.random_visibility", icon="RESTRICT_VIEW_OFF")
+def shapekey_panel_append(self, context):
     
-    row = layout.row()   
-    row.label("Set Attributes for:")
-    col = layout.column(align=True)
-    row = col.row(align=True)
-    row.prop(ske, "selection", expand=True)
-    
-    row = layout.row()
-    col = layout.column(align=True)
-    col.prop(ske, "value")
-    col.operator("shapekeyextras.set_values", icon="KEY_HLT")
-    rowsub = col.row(align=True)
-    rowsub.prop(ske, "random_min")
-    rowsub.prop(ske, "random_max")
-    col.operator("shapekeyextras.randomize", icon="KEYINGSET")
-    col.operator("shapekeyextras.set_range", icon="SORTSIZE")
-     
-    row = layout.row()
-    col = layout.column(align=True)
-    rowsub = col.row(align=True)
-    rowsub.operator("shapekeyextras.insert_keyframe", icon="ACTION")
-    rowsub = col.row(align=True)
-    rowsub.operator("shapekeyextras.delete_keyframe", icon="PANEL_CLOSE")
-    rowsub.operator("shapekeyextras.delete_all_keyframes", icon="PANEL_CLOSE")
-    
-    row = layout.row()
-    col = layout.column(align=True)
-    rowsub = col.row(align=True)
-    rowsub.operator("shapekeyextras.add_drivers", icon="DRIVER")
-    rowsub = col.row(align=True)
-    rowsub.operator("shapekeyextras.remove_drivers", icon="PANEL_CLOSE")
-    
-    row = layout.row()
-    row.label("Advanced Selection:")
-    col = layout.column(align=True)
-    rowsub = col.row(align=True)
-    rowsub.prop(ske, "exclude")
-    rowsub = col.column(align=True)
-    rowsub.prop(ske, "only")
+    if (context.object.data.shape_keys and
+        context.mode == 'OBJECT'):
+        
+        scn = context.scene
+        ske = scn.shape_key_extras
 
-    row = layout.row()
-    col = layout.column(align=True)
-    rowsub = col.row(align=True)
-    rowsub.operator("shapekeyextras.print_shape_key_selection", icon="CONSOLE")
-    rowsub = col.row(align=True)
-    rowsub.operator("shapekeyextras.remove_selection", icon="CANCEL")
-    layout.separator()
+        layout = self.layout
+        row = layout.row()
+        row.label("Visibility:")
+        col = layout.column(align=True)
+        rowsub = col.row(align=True)
+        rowsub.operator("shapekeyextras.enable_all", icon="RESTRICT_VIEW_OFF")
+        rowsub.operator("shapekeyextras.toggle_mute", icon="FILE_REFRESH")
+        rowsub = col.row(align=True)
+        rowsub.operator("shapekeyextras.disable_all", icon="RESTRICT_VIEW_ON")
+        rowsub.operator("shapekeyextras.random_visibility", icon="RESTRICT_VIEW_OFF")
+        
+        row = layout.row()   
+        row.label("Set Attributes for:")
+        col = layout.column(align=True)
+        row = col.row(align=True)
+        row.prop(ske, "selection", expand=True)
+        
+        row = layout.row()
+        col = layout.column(align=True)
+        col.prop(ske, "value")
+        col.operator("shapekeyextras.set_values", icon="KEY_HLT")
+        rowsub = col.row(align=True)
+        rowsub.prop(ske, "random_min")
+        rowsub.prop(ske, "random_max")
+        col.operator("shapekeyextras.randomize", icon="KEYINGSET")
+        col.operator("shapekeyextras.set_range", icon="SORTSIZE")
+         
+        row = layout.row()
+        col = layout.column(align=True)
+        rowsub = col.row(align=True)
+        rowsub.operator("shapekeyextras.insert_keyframe", icon="ACTION")
+        rowsub = col.row(align=True)
+        rowsub.operator("shapekeyextras.delete_keyframe", icon="PANEL_CLOSE")
+        rowsub.operator("shapekeyextras.delete_all_keyframes", icon="PANEL_CLOSE")
+        
+        row = layout.row()
+        col = layout.column(align=True)
+        rowsub = col.row(align=True)
+        rowsub.operator("shapekeyextras.add_drivers", icon="DRIVER")
+        rowsub = col.row(align=True)
+        rowsub.operator("shapekeyextras.remove_drivers", icon="PANEL_CLOSE")
+        
+        row = layout.row()
+        row.label("Advanced Selection:")
+        col = layout.column(align=True)
+        rowsub = col.row(align=True)
+        rowsub.prop(ske, "exclude")
+        rowsub = col.column(align=True)
+        rowsub.prop(ske, "only")
+
+        row = layout.row()
+        col = layout.column(align=True)
+        rowsub = col.row(align=True)
+        rowsub.operator("shapekeyextras.print_shape_key_selection", icon="CONSOLE")
+        rowsub = col.row(align=True)
+        rowsub.operator("shapekeyextras.remove_selection", icon="CANCEL")
+
+        layout.separator()
+
+
+class ActionsVertexGroupUiList(Operator):
+    bl_idname = "shapekeyextras.action_vg_ui_list"
+    bl_label = "Vertex Group List Actions"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    action = EnumProperty(
+        items=(
+            ('UP', "Up", ""),
+            ('DOWN', "Down", ""),
+            ('REMOVE', "Remove", ""),
+            ('ADD', "Add", ""),
+        )
+    )
+
+    def invoke(self, context, event):
+        scn = context.scene
+        ske = scn.shape_key_extras
+        colprop = scn.shape_key_extras_collection
+        idx = ske.vg_uilist_index
+
+        try:
+            item = colprop[idx]
+        except IndexError:
+            pass
+
+        else:
+            if self.action == 'DOWN' and idx < len(colprop) - 1:
+                item_next = colprop[idx+1].name
+                ske.vg_uilist_index += 1
+                info = 'Item %d selected' % (ske.vg_uilist_index + 1)
+                self.report({'INFO'}, info)
+
+            elif self.action == 'UP' and idx >= 1:
+                item_prev = colprop[idx-1].name
+                ske.vg_uilist_index -= 1
+                info = 'Item %d selected' % (ske.vg_uilist_index + 1)
+                self.report({'INFO'}, info)
+
+            elif self.action == 'REMOVE':
+                            
+                first_item = True if ske.vg_uilist_index == 0 else False
+                
+                if colprop[ske.vg_uilist_index].name:
+                    info = '%s removed from list' % (colprop[ske.vg_uilist_index].name)
+                else:
+                    info = 'Item %s removed from list' % (ske.vg_uilist_index +1)
+                
+                if first_item:
+                    ske.vg_uilist_index = 0
+                else:
+                    ske.vg_uilist_index -= 1
+                
+                self.report({'INFO'}, info)
+                colprop.remove(idx)
+
+        if self.action == 'ADD':
+            item = colprop.add()
+            item.collection_id = len(colprop)
+            #item.collection_name = ""
+            ske.vg_uilist_index = (len(colprop)-1)
+            #info = '%s added to list' % ("Empty group item")
+            #self.report({'INFO'}, info)
+
+        return {"FINISHED"}
+
+
+class VertexGroupUiList(UIList):
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        split = layout.split(.1)
+        split.scale_y = 1.1
+        split.label(str(index+1))
+        split.prop_search(item, "name", context.active_object, "vertex_groups", text="")
+
+
+def vertexgroup_panel_append(self, context):
+        
+    if (context.active_object.type == 'MESH' and 
+        len(context.active_object.vertex_groups) > 1 and
+        context.mode == 'OBJECT'):
+        
+        scn = context.scene
+        ske = scn.shape_key_extras
+        
+        layout = self.layout
+        row = layout.row()
+        row.label("Merge Groups:")
+
+        rows = 4
+        row = layout.row()
+        row.template_list("VertexGroupUiList", "", scn, "shape_key_extras_collection", ske, "vg_uilist_index", rows=rows)
+        
+        
+        col = row.column(align=True)
+        col.operator("shapekeyextras.action_vg_ui_list", icon='ZOOMIN', text="").action = 'ADD'
+        col.operator("shapekeyextras.action_vg_ui_list", icon='ZOOMOUT', text="").action = 'REMOVE'
+        col.separator()
+        col.operator("shapekeyextras.action_vg_ui_list", icon='TRIA_UP', text="").action = 'UP'
+        col.operator("shapekeyextras.action_vg_ui_list", icon='TRIA_DOWN', text="").action = 'DOWN'
+
+        row = layout.row()
+        col = row.column(align=True)
+        rowsub = col.row(align=True)
+        #rowsub.operator("shapekeyextras.print_vg_ui_list", icon="WORDWRAP_ON")
+        rowsub.operator("shapekeyextras.add_all_vg_ui_list", icon="WORDWRAP_ON")
+        rowsub.operator("shapekeyextras.clear_vg_ui_list", icon="X")
+        col.operator("shapekeyextras.merge_vg_ui_list", icon="STICKY_UVS_LOC")
+
+        layout.separator()
 
 # -------------------------------------------------------------------
 # register    
@@ -520,12 +764,15 @@ def draw_shapekey_extras(self, context):
 
 def register():
     bpy.utils.register_module(__name__)
-    bpy.types.DATA_PT_shape_keys.append(draw_shapekey_extras)
-    bpy.types.Scene.shape_key_extras = PointerProperty(type=ShapeKeyExtrasSettings)
+    bpy.types.DATA_PT_shape_keys.append(shapekey_panel_append)
+    bpy.types.DATA_PT_vertex_groups.append(vertexgroup_panel_append)
+    bpy.types.Scene.shape_key_extras = PointerProperty(type=SkeSettings)
+    bpy.types.Scene.shape_key_extras_collection = CollectionProperty(type=SkePropertyCollection)
 
 def unregister():
     bpy.utils.unregister_module(__name__)
-    bpy.types.DATA_PT_shape_keys.remove(draw_shapekey_extras)
+    bpy.types.DATA_PT_shape_keys.remove(shapekey_panel_append)
+    del bpy.types.Scene.shape_key_extras_collection
     del bpy.types.Scene.shape_key_extras
 
 if __name__ == "__main__":
