@@ -20,7 +20,7 @@ bl_info = {
     "name": "Shape Key Extras",
     "description": "Shape Key Extras",
     "author": "Christian Brinkmann",
-    "version": (0, 1, 4),
+    "version": (0, 1, 7),
     "blender": (2, 76, 0),
     "location": "Properties > Object Data > Shape Keys",
     "tracker_url": "https://github.com/p2or/blender-shapekeyextras/issues",
@@ -70,28 +70,28 @@ def shape_key_selection(op, context):
     ske = scn.shape_key_extras
     shape_key_names = []
     
-    if not ske.only:
+    if not ske.sk_only:
         for shapekey in context.object.data.shape_keys.key_blocks:
-            exclude_char = search_chars(ske.exclude, shapekey.name)
+            exclude_char = search_chars(ske.sk_exclude, shapekey.name)
             if exclude_char is not True:
-                if ske.selection == 'ALL':
+                if ske.sk_selection == 'ALL':
                     shape_key_names.append(shapekey.name)
-                if ske.selection == 'ENABLED':
+                if ske.sk_selection == 'ENABLED':
                     if shapekey.mute is False:
                         shape_key_names.append(shapekey.name)
-                if ske.selection == 'DISABLED':
+                if ske.sk_selection == 'DISABLED':
                     if shapekey.mute is True:
                         shape_key_names.append(shapekey.name)                  
     else:
         for shapekey in context.object.data.shape_keys.key_blocks:
-            only_char = search_chars(ske.only, shapekey.name)
+            only_char = search_chars(ske.sk_only, shapekey.name)
             if only_char is True:
-                if ske.selection == 'ALL':
+                if ske.sk_selection == 'ALL':
                     shape_key_names.append(shapekey.name)
-                if ske.selection == 'ENABLED':
+                if ske.sk_selection == 'ENABLED':
                     if shapekey.mute is False:
                         shape_key_names.append(shapekey.name)
-                if ske.selection == 'DISABLED':
+                if ske.sk_selection == 'DISABLED':
                     if shapekey.mute is True:
                         shape_key_names.append(shapekey.name)    
                 
@@ -103,43 +103,38 @@ def shape_key_selection(op, context):
 
 class SkeSettings(PropertyGroup):
 
-    value = FloatProperty(
+    sk_value = FloatProperty(
         name = "Value",
         description = "Set static value",
         default = 0,
         #min = 0,
         #max =1
         )
-    random_min = FloatProperty(
+    sk_random_min = FloatProperty(
         name = "Min",
         description = "Set minimum random value",
         default = 0,
         #min = 0,
         #max =1
         )
-    random_max = FloatProperty(
+    sk_random_max = FloatProperty(
         name = "Max",
         description = "Set maximum random value",
         default = 1,
         #min = 0,
         #max =1
         )
-    apply_enabled = BoolProperty (
-        name = "Apply values for enabled Keys only",
-        description = "Apply values for enabled Keys only",
-        default = True 
-        )
-    exclude = StringProperty (
+    sk_exclude = StringProperty (
         name = "Exclude",
         description = "Exclude by first character",
         default = "Basis, #, *"
         )
-    only = StringProperty (
+    sk_only = StringProperty (
         name = "Only",
         description = "Include by first character",
         default = ""
         )
-    selection = EnumProperty(
+    sk_selection = EnumProperty(
         name="Selection",
         description="Shape Key Selection",
         items = (('ALL', "All", ""),
@@ -147,7 +142,10 @@ class SkeSettings(PropertyGroup):
                 ('DISABLED', "Disabled", ""),
                 ),default='ALL')
 
+    sk_set_attributes = BoolProperty(default=False)
+    sk_advanced_selection = BoolProperty(default=False)
     vg_uilist_index = IntProperty()
+    vg_merge_vgroups = BoolProperty(default=False)
 
 
 class SkePropertyCollection(PropertyGroup):
@@ -156,13 +154,13 @@ class SkePropertyCollection(PropertyGroup):
 
 
 # -------------------------------------------------------------------
-# operators    
+# Shape Key Operators    
 # -------------------------------------------------------------------
 
 class EnableAllButton (Operator):
     bl_idname = "shapekeyextras.enable_all"
     bl_label = "Enable All"
-    bl_description = "Enable all Shape Keys"
+    bl_description = "Enable all Shape Keys in Selection"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -181,10 +179,11 @@ class EnableAllButton (Operator):
              
         return {'FINISHED'}
 
+
 class DisableAllButton (Operator):
     bl_idname = "shapekeyextras.disable_all"
     bl_label = "Disable All"
-    bl_description = "Disable all Shape Keys"
+    bl_description = "Mute all Shape Keys in Selection"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
@@ -203,10 +202,11 @@ class DisableAllButton (Operator):
              
         return {'FINISHED'}
    
+
 class ToggleAllButton (Operator):
     bl_idname = "shapekeyextras.toggle_mute"
     bl_label = "Toggle Visibility"
-    bl_description = "Toggle Mute of all Shape Keys"
+    bl_description = "Toggle Mute State of all Shape Keys in Selection"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
@@ -224,10 +224,11 @@ class ToggleAllButton (Operator):
              self.report({'WARNING'}, "No shape keys found.")
         return {'FINISHED'}
     
+
 class RandomEnableButton (Operator):
     bl_idname = "shapekeyextras.random_visibility"
-    bl_label = "Random Visibility"
-    bl_description = "Random Visibility for all Shape Keys"
+    bl_label = "Randomize Visibility"
+    bl_description = "Randomize Visibility/Mute State for all Shape Keys in Selection"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -245,10 +246,11 @@ class RandomEnableButton (Operator):
             self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
 
+
 class RandomizeValueButton (Operator):
     bl_idname = "shapekeyextras.randomize"
-    bl_label = "Randomize Shape Key Values"
-    bl_description = "Randomize Shape Key Values"
+    bl_label = "Randomize Shape Key Value"
+    bl_description = "Randomize Shape Key Value for all Shape Keys in Selection"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -260,17 +262,18 @@ class RandomizeValueButton (Operator):
             for i in shape_keys:
                 if i != 'Basis':
                     shapekey = context.object.data.shape_keys.key_blocks[i]
-                    shapekey.value = random.uniform(ske.random_min, ske.random_max)
+                    shapekey.value = random.uniform(ske.sk_random_min, ske.sk_random_max)
 
             self.report({'INFO'}, "Values for Shape Keys generated")
         else:
             self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
 
+
 class SetRangeButton (Operator):
     bl_idname = "shapekeyextras.set_range"
     bl_label = "Set Shape Key Range"
-    bl_description = "Set Range Values for Shape Keys"
+    bl_description = "Set Range Values for Shape Keys in Selection"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -282,18 +285,19 @@ class SetRangeButton (Operator):
             for i in shape_keys:
                 if i != 'Basis':
                     shapekey = context.object.data.shape_keys.key_blocks[i]
-                    shapekey.slider_min = ske.random_min
-                    shapekey.slider_max = ske.random_max
+                    shapekey.slider_min = ske.sk_random_min
+                    shapekey.slider_max = ske.sk_random_max
                     
             self.report({'INFO'}, "Range Values adjusted")
         else:
             self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
     
+
 class ApplyValueButton (Operator):
     bl_idname = "shapekeyextras.set_values"
     bl_label = "Set Shape Key Values"
-    bl_description = "Apply a static Value to Shape Keys"
+    bl_description = "Assign static Values to all Shape Keys in Selection"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -305,17 +309,18 @@ class ApplyValueButton (Operator):
             for i in shape_keys:
                 if i != 'Basis':
                     shapekey = context.object.data.shape_keys.key_blocks[i]
-                    shapekey.value = ske.value
+                    shapekey.value = ske.sk_value
                     
             self.report({'INFO'}, "Value assigned to Shape Keys")        
         else:
             self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
     
+
 class RemoveDriversFromShapeKeysButton (Operator):
     bl_idname = "shapekeyextras.remove_drivers"
     bl_label = "Remove Drivers"
-    bl_description = "Remove Drivers from Shapekeys"
+    bl_description = "Remove Drivers from Shapekeys in Selection"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -329,11 +334,15 @@ class RemoveDriversFromShapeKeysButton (Operator):
         else:
             self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
-     
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
+
+
 class AddDriversToShapeKeysButton (Operator):
     bl_idname = "shapekeyextras.add_drivers"
     bl_label = "Add Drivers"
-    bl_description = "Add Drivers to Shapekeys"
+    bl_description = "Add Drivers to Shapekeys in Selection"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
@@ -348,11 +357,12 @@ class AddDriversToShapeKeysButton (Operator):
             self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
 
+
 # http://stackoverflow.com/questions/7977550/how-to-change-the-value-of-the-shape-key-in-blender-script
 class InsertKeyframeButton (Operator):
     bl_idname = "shapekeyextras.insert_keyframe"
-    bl_label = "Insert Keyframe"
-    bl_description = "Insert Keyframe for value"
+    bl_label = "Insert Value Keyframe"
+    bl_description = "Insert Keyframe (Shape Key Value) for all Shape Keys in Selection"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
@@ -367,10 +377,11 @@ class InsertKeyframeButton (Operator):
             self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
 
+
 class DeleteKeyframeButton (Operator):
     bl_idname = "shapekeyextras.delete_keyframe"
-    bl_label = "Delete current Keyframe"
-    bl_description = "Delete Keyframe for value"
+    bl_label = "Remove current Keyframe"
+    bl_description = "Remove current Keyframe for all Shape Keys in Selection"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
@@ -378,45 +389,50 @@ class DeleteKeyframeButton (Operator):
             shape_keys = (shape_key_selection(self, context))
             for i in shape_keys:
                 if i != 'Basis':
-                    context.object.data.shape_keys.key_blocks[i].keyframe_delete(data_path="value")
-            
-            self.report({'INFO'}, "Keyframes deleted")
+                    try:
+                        context.object.data.shape_keys.key_blocks[i].keyframe_delete(data_path="value")
+                        self.report({'INFO'}, "Keyframes deleted.")
+                    except:
+                        self.report({'WARNING'}, "No Keyframe to remove.")
         else:
             self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
 
 
 # http://blender.stackexchange.com/questions/5827/get-shape-key-from-action-or-fcurve-in-python
 class DeleteAllKeyframesButton (Operator):
     bl_idname = "shapekeyextras.delete_all_keyframes"
-    bl_label = "Delete all Keyframes"
-    bl_description = "Delete all Keyframes for value"
+    bl_label = "Remove Animation"
+    bl_description = "Remove all Value Keyframes for all Shape Keys in Selection"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
         sce = context.scene
-        
         if context.object.data.shape_keys:
             shape_keys = (shape_key_selection(self, context))
             sk_data = context.object.data.shape_keys
             for i in shape_keys:
-                if i != 'Basis':
+                if i != 'Basis' and sk_data.animation_data is not None:
                     for f in range(sce.frame_start, sce.frame_end+1):
-                        if sk_data.animation_data.action != None:
+                        if sk_data.animation_data.action:
                             sk_data.key_blocks[i].keyframe_delete(data_path="value", frame=f) #returns a bool
-                        else:
-                            break
-                      
-            self.report({'INFO'}, "All Keyframes deleted")
+
+            self.report({'INFO'}, "All Keyframes removed.")
         else:
             self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
     
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
+
 
 class RemoveSelectedKeysButton (Operator):
     bl_idname = "shapekeyextras.remove_selection"
-    bl_label = "Delete Shape Keys"
-    bl_description = "Remove selected Shape Keys"
+    bl_label = "Remove Shape Keys"
+    bl_description = "Remove all Shape Keys in Selection"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -437,7 +453,11 @@ class RemoveSelectedKeysButton (Operator):
         else:
             self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
-          
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
+
+
 class PrintShapeKeySelectionButton (Operator):
     bl_idname = "shapekeyextras.print_shape_key_selection"
     bl_label = "Print Selection to Console"
@@ -447,12 +467,15 @@ class PrintShapeKeySelectionButton (Operator):
     def execute(self, context):
         if context.object.data.shape_keys:       
             shape_keys = (shape_key_selection(self, context))
-            self.report({'INFO'}, "Shape Keys printed to console")
+            self.report({'INFO'}, ('Selection: %s' % (', '.join(shape_keys))))
             print ("Selection:", ', '.join(shape_keys))
         else:
             self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
 
+# -------------------------------------------------------------------
+# Vertex Group Operators    
+# -------------------------------------------------------------------
 
 class MergeVertexGroupUiList(Operator):
     bl_idname = "shapekeyextras.merge_vg_ui_list"
@@ -546,11 +569,8 @@ class AddAllGroupsToUiList(Operator):
                 ske.vg_uilist_index = (len(colprop)-1)
                 items += 1
         
-        if items:
-            info = '%s Vertex Groups added to the list' % (items)
-        else:
-            info = 'Nothing added'
-        
+        if items: info = '%s Vertex Groups added to the list' % (items)
+        else: info = 'Nothing to add'
         self.report({'INFO'}, info)
         return{'FINISHED'}
 
@@ -577,7 +597,7 @@ class ClearVertexGroupUiList(Operator):
 
 
 # -------------------------------------------------------------------
-# ui    
+# Ui
 # -------------------------------------------------------------------
 
 def shapekey_panel_append(self, context):
@@ -587,63 +607,80 @@ def shapekey_panel_append(self, context):
         
         scn = context.scene
         ske = scn.shape_key_extras
-
         layout = self.layout
-        row = layout.row()
-        row.label("Visibility:")
-        col = layout.column(align=True)
-        rowsub = col.row(align=True)
-        rowsub.operator("shapekeyextras.enable_all", icon="RESTRICT_VIEW_OFF")
-        rowsub.operator("shapekeyextras.toggle_mute", icon="FILE_REFRESH")
-        rowsub = col.row(align=True)
-        rowsub.operator("shapekeyextras.disable_all", icon="RESTRICT_VIEW_ON")
-        rowsub.operator("shapekeyextras.random_visibility", icon="RESTRICT_VIEW_OFF")
-        
-        row = layout.row()   
-        row.label("Set Attributes for:")
-        col = layout.column(align=True)
-        row = col.row(align=True)
-        row.prop(ske, "selection", expand=True)
-        
-        row = layout.row()
-        col = layout.column(align=True)
-        col.prop(ske, "value")
-        col.operator("shapekeyextras.set_values", icon="KEY_HLT")
-        rowsub = col.row(align=True)
-        rowsub.prop(ske, "random_min")
-        rowsub.prop(ske, "random_max")
-        col.operator("shapekeyextras.randomize", icon="KEYINGSET")
-        col.operator("shapekeyextras.set_range", icon="SORTSIZE")
-         
-        row = layout.row()
-        col = layout.column(align=True)
-        rowsub = col.row(align=True)
-        rowsub.operator("shapekeyextras.insert_keyframe", icon="ACTION")
-        rowsub = col.row(align=True)
-        rowsub.operator("shapekeyextras.delete_keyframe", icon="PANEL_CLOSE")
-        rowsub.operator("shapekeyextras.delete_all_keyframes", icon="PANEL_CLOSE")
-        
-        row = layout.row()
-        col = layout.column(align=True)
-        rowsub = col.row(align=True)
-        rowsub.operator("shapekeyextras.add_drivers", icon="DRIVER")
-        rowsub = col.row(align=True)
-        rowsub.operator("shapekeyextras.remove_drivers", icon="PANEL_CLOSE")
-        
-        row = layout.row()
-        row.label("Advanced Selection:")
-        col = layout.column(align=True)
-        rowsub = col.row(align=True)
-        rowsub.prop(ske, "exclude")
-        rowsub = col.column(align=True)
-        rowsub.prop(ske, "only")
 
-        row = layout.row()
-        col = layout.column(align=True)
-        rowsub = col.row(align=True)
-        rowsub.operator("shapekeyextras.print_shape_key_selection", icon="CONSOLE")
-        rowsub = col.row(align=True)
-        rowsub.operator("shapekeyextras.remove_selection", icon="CANCEL")
+        layout.separator()
+        box_set_attributes = layout.box()
+        row = box_set_attributes.row()
+        row.prop(ske, "sk_set_attributes",
+            icon="TRIA_DOWN" if ske.sk_set_attributes else "TRIA_RIGHT",
+            icon_only=True, emboss=False)
+
+        row.label(text="Set Shape Key Properties")
+        if ske.sk_set_attributes:
+            
+            row = box_set_attributes.row()
+            col = row.column(align=True)
+            rowsub = col.row(align=True)
+            rowsub.operator("shapekeyextras.enable_all", icon="RESTRICT_VIEW_OFF")
+            rowsub.operator("shapekeyextras.disable_all", icon="RESTRICT_VIEW_ON")
+            col.operator("shapekeyextras.toggle_mute", icon="FILE_REFRESH")
+            col.operator("shapekeyextras.random_visibility", icon="GROUP_VERTEX")
+            col.separator()
+
+            #row = box_set_attributes.row()
+            col = box_set_attributes.column(align=True)
+            rowsub = col.row(align=True)
+            rowsub.prop(ske, "sk_selection", expand=True)
+
+            box_selection = col.box()
+            row = box_selection.row()
+            row.prop(ske, "sk_advanced_selection",
+                icon="TRIA_DOWN" if ske.sk_advanced_selection else "TRIA_RIGHT",
+                icon_only=True, emboss=False)
+
+            row.label(text="Custom Selection")
+            if ske.sk_advanced_selection:
+                row = box_selection.row()
+                col = row.column(align=True)
+                rowsub = col.row(align=True)
+                rowsub = col.row(align=True)
+                rowsub.prop(ske, "sk_exclude")
+                rowsub = col.column(align=True)
+                rowsub.prop(ske, "sk_only")
+                row = box_selection.row()
+                col = box_selection.column(align=True)
+                rowsub = col.row(align=True)
+                rowsub.operator("shapekeyextras.print_shape_key_selection", icon="CONSOLE")
+
+            col.separator()
+            row = box_set_attributes.row()
+            col = row.column(align=True)
+            col.prop(ske, "sk_value")
+            col.operator("shapekeyextras.set_values", icon="KEY_HLT")
+            rowsub = col.row(align=True)
+            rowsub.prop(ske, "sk_random_min")
+            rowsub.prop(ske, "sk_random_max")
+            col.operator("shapekeyextras.randomize", icon="KEYINGSET")
+            col.operator("shapekeyextras.set_range", icon="SORTSIZE")
+            col.separator()
+
+            row = box_set_attributes.row()
+            col = row.column(align=True)
+            rowsub = col.row(align=True)
+            rowsub.operator("shapekeyextras.insert_keyframe", icon="ACTION")
+            rowsub = col.row(align=True)
+            rowsub.operator("shapekeyextras.delete_keyframe", icon="PANEL_CLOSE")
+            rowsub.operator("shapekeyextras.delete_all_keyframes", icon="PANEL_CLOSE")
+            col.separator()
+
+            row = box_set_attributes.row()
+            col = row.column(align=True)
+            rowsub = col.row(align=True)
+            rowsub.operator("shapekeyextras.add_drivers", icon="DRIVER")
+            rowsub.operator("shapekeyextras.remove_drivers", icon="PANEL_CLOSE")
+            rowsub = col.row(align=True)
+            rowsub.operator("shapekeyextras.remove_selection", icon="CANCEL")
 
         layout.separator()
 
@@ -731,30 +768,35 @@ def vertexgroup_panel_append(self, context):
         
         scn = context.scene
         ske = scn.shape_key_extras
-        
         layout = self.layout
-        row = layout.row()
-        row.label("Merge Groups:")
 
-        rows = 4
-        row = layout.row()
-        row.template_list("VertexGroupUiList", "", scn, "shape_key_extras_collection", ske, "vg_uilist_index", rows=rows)
-        
-        
-        col = row.column(align=True)
-        col.operator("shapekeyextras.action_vg_ui_list", icon='ZOOMIN', text="").action = 'ADD'
-        col.operator("shapekeyextras.action_vg_ui_list", icon='ZOOMOUT', text="").action = 'REMOVE'
-        col.separator()
-        col.operator("shapekeyextras.action_vg_ui_list", icon='TRIA_UP', text="").action = 'UP'
-        col.operator("shapekeyextras.action_vg_ui_list", icon='TRIA_DOWN', text="").action = 'DOWN'
+        box_merge_vgroups = layout.box()
+        row = box_merge_vgroups.row()
+        row.prop(ske, "vg_merge_vgroups",
+            icon="TRIA_DOWN" if ske.vg_merge_vgroups else "TRIA_RIGHT",
+            icon_only=True, emboss=False
+        )
+        row.label(text="Merge Vertex Groups")
+        if ske.vg_merge_vgroups:
 
-        row = layout.row()
-        col = row.column(align=True)
-        rowsub = col.row(align=True)
-        #rowsub.operator("shapekeyextras.print_vg_ui_list", icon="WORDWRAP_ON")
-        rowsub.operator("shapekeyextras.add_all_vg_ui_list", icon="WORDWRAP_ON")
-        rowsub.operator("shapekeyextras.clear_vg_ui_list", icon="X")
-        col.operator("shapekeyextras.merge_vg_ui_list", icon="STICKY_UVS_LOC")
+            rows = 4
+            row = box_merge_vgroups.row() 
+            row.template_list("VertexGroupUiList", "", scn, "shape_key_extras_collection", ske, "vg_uilist_index", rows=rows)
+            
+            col = row.column(align=True)
+            col.operator("shapekeyextras.action_vg_ui_list", icon='ZOOMIN', text="").action = 'ADD'
+            col.operator("shapekeyextras.action_vg_ui_list", icon='ZOOMOUT', text="").action = 'REMOVE'
+            col.separator()
+            col.operator("shapekeyextras.action_vg_ui_list", icon='TRIA_UP', text="").action = 'UP'
+            col.operator("shapekeyextras.action_vg_ui_list", icon='TRIA_DOWN', text="").action = 'DOWN'
+
+            row = box_merge_vgroups.row()
+            col = row.column(align=True)
+            rowsub = col.row(align=True)
+            #rowsub.operator("shapekeyextras.print_vg_ui_list", icon="WORDWRAP_ON")
+            rowsub.operator("shapekeyextras.add_all_vg_ui_list", icon="WORDWRAP_ON")
+            rowsub.operator("shapekeyextras.clear_vg_ui_list", icon="X")
+            col.operator("shapekeyextras.merge_vg_ui_list", icon="STICKY_UVS_LOC")
 
         layout.separator()
 
