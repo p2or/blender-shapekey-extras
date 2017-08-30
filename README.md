@@ -1,6 +1,6 @@
 ### Shape Key Extras
 
-A Blender Add-on to manipulate [Shape Keys](https://www.blender.org/manual/animation/shape_keys.html).
+A Blender Add-on to manipulate [Shape Keys](https://docs.blender.org/manual/en/dev/animation/shape_keys).
 
 ![](https://i.stack.imgur.com/lkQiw.jpg)
 
