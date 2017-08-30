@@ -18,9 +18,9 @@
 
 bl_info = {
     "name": "Shape Key Extras",
-    "description": "Shape Key Extras",
+    "description": "A Blender Add-on to manipulate Shape Keys",
     "author": "Christian Brinkmann",
-    "version": (0, 1, 7),
+    "version": (0, 1, 8),
     "blender": (2, 76, 0),
     "location": "Properties > Object Data > Shape Keys",
     "tracker_url": "https://github.com/p2or/blender-shapekeyextras/issues",
@@ -46,7 +46,7 @@ from bpy.types import (Operator,
                        )
 
 # -------------------------------------------------------------------
-# helper    
+# Helper    
 # -------------------------------------------------------------------
 
 def search_chars(char_sequence, name):
@@ -98,7 +98,7 @@ def shape_key_selection(op, context):
     return shape_key_names
 
 # -------------------------------------------------------------------
-# properties    
+# Properties    
 # -------------------------------------------------------------------
 
 class SkeSettings(PropertyGroup):
@@ -473,6 +473,48 @@ class PrintShapeKeySelectionButton (Operator):
             self.report({'WARNING'}, "No shape keys found.")    
         return {'FINISHED'}
 
+
+class MoveShapeKey(bpy.types.Operator):
+    bl_idname = "shapekeyextras.move_shapekey"
+    bl_label = "Move Shape Key"
+    bl_description = "Move Shape Key up or down by certain amount"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    steps = IntProperty()
+    action = EnumProperty(
+        items=(
+        ('DOWN','Down','', 'TRIA_DOWN', 1),
+        ('UP','Up','', 'TRIA_UP', 2)
+        ))
+    
+    @classmethod
+    def poll(cls, context):
+        return context.object.active_shape_key
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        row = self.layout
+        row.prop(self, "steps", text="Steps")
+        row.prop(self, "action", expand=True)
+        row.separator()
+        
+    def execute(self, context):
+        if context.object.active_shape_key:
+            old_id = context.object.active_shape_key_index
+            for i in range(self.steps):
+                if self.action == 'DOWN':
+                    bpy.ops.object.shape_key_move(type="DOWN")
+                else:
+                    bpy.ops.object.shape_key_move(type="UP")
+            
+            new_id = context.object.active_shape_key_index
+            info = 'Shape Key moved from %s to %s' % (old_id + 1, new_id + 1)
+            self.report({'INFO'}, info)
+            return {'FINISHED'}
+
+
 # -------------------------------------------------------------------
 # Vertex Group Operators    
 # -------------------------------------------------------------------
@@ -800,8 +842,44 @@ def vertexgroup_panel_append(self, context):
 
         layout.separator()
 
+
+def shapekey_item_draw(self, context, layout, data, item, icon, active_data, active_propname, index):
+    
+    obj = active_data
+    key_block = item
+    if self.layout_type in {'DEFAULT', 'COMPACT'}:
+        
+        split = layout.split(.1)
+        split.label(str(index+1))
+        #split = split.split(.1)
+        #split.label(str(index+1))
+        row = split.row(align=True)
+        row.prop(key_block, "name", text="", emboss=False, icon_value=icon)
+        
+        row = split.row(align=True)
+        if key_block.mute or (obj.mode == 'EDIT' and not (obj.use_shape_key_edit_mode and obj.type == 'MESH')):
+            row.active = False
+        if not item.id_data.use_relative:
+            row.prop(key_block, "frame", text="", emboss=False)
+        elif index > 0:
+            row.prop(key_block, "value", text="", emboss=False)
+        else:
+            row.label(text="")
+        row.prop(key_block, "mute", text="", emboss=False)
+    
+    elif self.layout_type == 'GRID':
+        layout.alignment = 'CENTER'
+        layout.label(text="", icon_value=icon)
+
+
+def shapekey_specials_append(self, context):
+    layout = self.layout
+    row = layout.row(align=True)
+    row.operator("shapekeyextras.move_shapekey", icon="PHYSICS")
+
+
 # -------------------------------------------------------------------
-# register    
+# Register
 # -------------------------------------------------------------------
 
 def register():
@@ -810,10 +888,14 @@ def register():
     bpy.types.DATA_PT_vertex_groups.append(vertexgroup_panel_append)
     bpy.types.Scene.shape_key_extras = PointerProperty(type=SkeSettings)
     bpy.types.Scene.shape_key_extras_collection = CollectionProperty(type=SkePropertyCollection)
+    bpy.types.MESH_UL_shape_keys.draw_item = shapekey_item_draw
+    bpy.types.MESH_MT_shape_key_specials.append(shapekey_specials_append)
 
 def unregister():
     bpy.utils.unregister_module(__name__)
     bpy.types.DATA_PT_shape_keys.remove(shapekey_panel_append)
+    bpy.types.DATA_PT_vertex_groups.remove(vertexgroup_panel_append)
+    bpy.types.MESH_MT_shape_key_specials.remove(shapekey_specials_append)
     del bpy.types.Scene.shape_key_extras_collection
     del bpy.types.Scene.shape_key_extras
 
