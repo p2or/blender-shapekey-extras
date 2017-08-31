@@ -20,7 +20,7 @@ bl_info = {
     "name": "Shape Key Extras",
     "description": "A Blender Add-on to manipulate Shape Keys",
     "author": "Christian Brinkmann",
-    "version": (0, 1, 8),
+    "version": (0, 1, 9),
     "blender": (2, 76, 0),
     "location": "Properties > Object Data > Shape Keys",
     "tracker_url": "https://github.com/p2or/blender-shapekeyextras/issues",
@@ -843,39 +843,43 @@ def vertexgroup_panel_append(self, context):
         layout.separator()
 
 
-def shapekey_item_draw(self, context, layout, data, item, icon, active_data, active_propname, index):
-    
-    obj = active_data
-    key_block = item
-    if self.layout_type in {'DEFAULT', 'COMPACT'}:
-        
-        split = layout.split(.1)
-        split.label(str(index+1))
-        #split = split.split(.1)
-        #split.label(str(index+1))
-        row = split.row(align=True)
-        row.prop(key_block, "name", text="", emboss=False, icon_value=icon)
-        
-        row = split.row(align=True)
-        if key_block.mute or (obj.mode == 'EDIT' and not (obj.use_shape_key_edit_mode and obj.type == 'MESH')):
-            row.active = False
-        if not item.id_data.use_relative:
-            row.prop(key_block, "frame", text="", emboss=False)
-        elif index > 0:
-            row.prop(key_block, "value", text="", emboss=False)
-        else:
-            row.label(text="")
-        row.prop(key_block, "mute", text="", emboss=False)
-    
-    elif self.layout_type == 'GRID':
-        layout.alignment = 'CENTER'
-        layout.label(text="", icon_value=icon)
-
-
 def shapekey_specials_append(self, context):
     layout = self.layout
     row = layout.row(align=True)
     row.operator("shapekeyextras.move_shapekey", icon="PHYSICS")
+
+
+class DrawShapeKeyListItem:
+    
+    def draw(self, context, layout, data, item, icon, active_data, active_propname, index):
+        obj = active_data
+        key_block = item
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            
+            split = layout.split(.1)
+            split.label(str(index+1))
+            #split = split.split(.1)
+            #split.label(str(index+1))
+            row = split.row(align=True)
+            row.prop(key_block, "name", text="", emboss=False, icon_value=icon)
+            
+            row = split.row(align=True)
+            if key_block.mute or (obj.mode == 'EDIT' and not (obj.use_shape_key_edit_mode and obj.type == 'MESH')):
+                row.active = False
+            if not item.id_data.use_relative:
+                row.prop(key_block, "frame", text="", emboss=False)
+            elif index > 0:
+                row.prop(key_block, "value", text="", emboss=False)
+            else:
+                row.label(text="")
+            row.prop(key_block, "mute", text="", emboss=False)
+        
+        elif self.layout_type == 'GRID':
+            layout.alignment = 'CENTER'
+            layout.label(text="", icon_value=icon)
+
+    # built-in method ../startup/bl_ui/properties_data_mesh.py
+    _draw = bpy.types.MESH_UL_shape_keys.draw_item
 
 
 # -------------------------------------------------------------------
@@ -888,7 +892,7 @@ def register():
     bpy.types.DATA_PT_vertex_groups.append(vertexgroup_panel_append)
     bpy.types.Scene.shape_key_extras = PointerProperty(type=SkeSettings)
     bpy.types.Scene.shape_key_extras_collection = CollectionProperty(type=SkePropertyCollection)
-    bpy.types.MESH_UL_shape_keys.draw_item = shapekey_item_draw
+    bpy.types.MESH_UL_shape_keys.draw_item = DrawShapeKeyListItem.draw
     bpy.types.MESH_MT_shape_key_specials.append(shapekey_specials_append)
 
 def unregister():
@@ -896,6 +900,7 @@ def unregister():
     bpy.types.DATA_PT_shape_keys.remove(shapekey_panel_append)
     bpy.types.DATA_PT_vertex_groups.remove(vertexgroup_panel_append)
     bpy.types.MESH_MT_shape_key_specials.remove(shapekey_specials_append)
+    bpy.types.MESH_UL_shape_keys.draw_item = DrawShapeKeyListItem._draw
     del bpy.types.Scene.shape_key_extras_collection
     del bpy.types.Scene.shape_key_extras
 
