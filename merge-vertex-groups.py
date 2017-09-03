@@ -20,7 +20,7 @@ bl_info = {
     "name": "Merge Vertex Groups",
     "description": "Merge Vertex Groups",
     "author": "Christian Brinkmann, Paul Gee",
-    "version": (0, 1, 9),
+    "version": (0, 1, 0),
     "blender": (2, 76, 0),
     "location": "Properties > Object Data > Vertex Groups",
     "tracker_url": "",
