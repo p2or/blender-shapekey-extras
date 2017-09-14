@@ -270,6 +270,32 @@ class RandomizeValueButton (Operator):
         return {'FINISHED'}
 
 
+class ResetExcludeProperty (Operator):
+    bl_idname = "shapekeyextras.reset_exclude"
+    bl_label = "Revert to Default"
+    bl_description = "Revert to Default"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        scn = context.scene
+        ske = scn.shape_key_extras
+        ske.property_unset("sk_exclude")
+        return {'FINISHED'}
+
+
+class ResetOnlyProperty (Operator):
+    bl_idname = "shapekeyextras.reset_only"
+    bl_label = "Revert to Default"
+    bl_description = "Revert to Default"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        scn = context.scene
+        ske = scn.shape_key_extras
+        ske.property_unset("sk_only")
+        return {'FINISHED'}
+
+
 class SetRangeButton (Operator):
     bl_idname = "shapekeyextras.set_range"
     bl_label = "Set Shape Key Range"
@@ -685,16 +711,16 @@ def shapekey_panel_append(self, context):
             if ske.sk_advanced_selection:
                 row = box_selection.row()
                 col = row.column(align=True)
-                rowsub = col.row(align=True)
-                rowsub = col.row(align=True)
-                rowsub.prop(ske, "sk_exclude")
-                rowsub = col.column(align=True)
-                rowsub.prop(ske, "sk_only")
-                row = box_selection.row()
-                col = box_selection.column(align=True)
-                rowsub = col.row(align=True)
-                rowsub.operator("shapekeyextras.print_shape_key_selection", icon="CONSOLE")
-
+                
+                sub = col.row(align=True)
+                sub.prop(ske, "sk_exclude")
+                sub.operator("shapekeyextras.reset_exclude", text="", icon="DOT")
+                sub = col.row(align=True)
+                sub.prop(ske, "sk_only")
+                sub.operator("shapekeyextras.reset_only", text="", icon="DOT")
+                row = box_selection.row(align=True)
+                row.operator("shapekeyextras.print_shape_key_selection", icon="CONSOLE")
+            
             col.separator()
             row = box_set_attributes.row()
             col = row.column(align=True)
