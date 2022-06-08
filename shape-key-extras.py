@@ -18,10 +18,10 @@
 
 bl_info = {
     "name": "Shape Key Extras",
-    "description": "A Blender Add-on to manipulate Shape Keys",
-    "author": "Christian Brinkmann",
-    "version": (0, 1, 9),
-    "blender": (2, 76, 0),
+    "description": "Blender Add-on to manipulate Shape Keys",
+    "author": "Christian Brinkmann (p2or)",
+    "version": (0, 2, 0),
+    "blender": (2, 80, 0),
     "location": "Properties > Object Data > Shape Keys",
     "tracker_url": "https://github.com/p2or/blender-shapekeyextras/issues",
     "category": "Mesh"
@@ -46,7 +46,7 @@ from bpy.types import (Operator,
                        )
 
 # -------------------------------------------------------------------
-# Helper    
+#   Helper    
 # -------------------------------------------------------------------
 
 def search_chars(char_sequence, name):
@@ -98,66 +98,65 @@ def shape_key_selection(op, context):
     return shape_key_names
 
 # -------------------------------------------------------------------
-# Properties    
+#   Properties    
 # -------------------------------------------------------------------
 
-class SkeSettings(PropertyGroup):
+class SKE_PG_sceneSettings(PropertyGroup):
 
-    sk_value = FloatProperty(
+    sk_value: FloatProperty(
         name = "Value",
         description = "Set static value",
-        default = 0,
-        #min = 0,
-        #max =1
+        default = 0, #min = 0, #max =1
         )
-    sk_random_min = FloatProperty(
+
+    sk_random_min: FloatProperty(
         name = "Min",
         description = "Set minimum random value",
         default = 0,
-        #min = 0,
-        #max =1
         )
-    sk_random_max = FloatProperty(
+    
+    sk_random_max: FloatProperty(
         name = "Max",
         description = "Set maximum random value",
         default = 1,
-        #min = 0,
-        #max =1
         )
-    sk_exclude = StringProperty (
+    
+    sk_exclude: StringProperty (
         name = "Exclude",
         description = "Exclude by first character",
         default = "Basis, #, *"
         )
-    sk_only = StringProperty (
+    
+    sk_only: StringProperty (
         name = "Only",
         description = "Include by first character",
         default = ""
         )
-    sk_selection = EnumProperty(
+    
+    sk_selection:  EnumProperty(
         name="Selection",
         description="Shape Key Selection",
         items = (('ALL', "All", ""),
                 ('ENABLED', "Enabled", ""),
                 ('DISABLED', "Disabled", ""),
-                ),default='ALL')
+                ),default='ALL'
+        )
 
-    sk_set_attributes = BoolProperty(default=False)
-    sk_advanced_selection = BoolProperty(default=False)
-    vg_uilist_index = IntProperty()
-    vg_merge_vgroups = BoolProperty(default=False)
+    sk_set_attributes: BoolProperty(default=False)
+    sk_advanced_selection: BoolProperty(default=False)
+    vg_uilist_index: IntProperty()
+    vg_merge_vgroups: BoolProperty(default=False)
 
 
-class SkePropertyCollection(PropertyGroup):
-    
-    collection_id = IntProperty()
+class SKE_PT_indexShapeKeys(PropertyGroup):
+    collection_id: IntProperty()
 
 
 # -------------------------------------------------------------------
-# Shape Key Operators    
+#   Shape Key Operators    
 # -------------------------------------------------------------------
 
-class EnableAllButton (Operator):
+class SKE_OT_enableShapeKeys(Operator):
     bl_idname = "shapekeyextras.enable_all"
     bl_label = "Enable All"
     bl_description = "Enable all Shape Keys in Selection"
@@ -180,7 +179,7 @@ class EnableAllButton (Operator):
         return {'FINISHED'}
 
 
-class DisableAllButton (Operator):
+class SKE_OT_disableShapeKeys(Operator):
     bl_idname = "shapekeyextras.disable_all"
     bl_label = "Disable All"
     bl_description = "Mute all Shape Keys in Selection"
@@ -191,7 +190,7 @@ class DisableAllButton (Operator):
         ske = scn.shape_key_extras
         
         if context.object.data.shape_keys:
-            shape_keys = (shape_key_selection(self, context))
+            shape_keys = shape_key_selection(self, context)
             for i in shape_keys:
                 shapekey = context.object.data.shape_keys.key_blocks[i]
                 shapekey.mute = True
@@ -203,7 +202,7 @@ class DisableAllButton (Operator):
         return {'FINISHED'}
    
 
-class ToggleAllButton (Operator):
+class SKE_OT_toggleShapeKeys(Operator):
     bl_idname = "shapekeyextras.toggle_mute"
     bl_label = "Toggle Visibility"
     bl_description = "Toggle Mute State of all Shape Keys in Selection"
@@ -214,7 +213,7 @@ class ToggleAllButton (Operator):
         ske = scn.shape_key_extras
         
         if context.object.data.shape_keys:
-            shape_keys = (shape_key_selection(self, context))
+            shape_keys = shape_key_selection(self, context)
             for i in shape_keys:
                 shapekey = context.object.data.shape_keys.key_blocks[i]
                 shapekey.mute = not shapekey.mute
@@ -225,7 +224,7 @@ class ToggleAllButton (Operator):
         return {'FINISHED'}
     
 
-class RandomEnableButton (Operator):
+class SKE_OT_randomShapeKeyEnable(Operator):
     bl_idname = "shapekeyextras.random_visibility"
     bl_label = "Randomize Visibility"
     bl_description = "Randomize Visibility/Mute State for all Shape Keys in Selection"
@@ -236,7 +235,7 @@ class RandomEnableButton (Operator):
         ske = scn.shape_key_extras
         
         if context.object.data.shape_keys:
-            shape_keys = (shape_key_selection(self, context))
+            shape_keys = shape_key_selection(self, context)
             for i in shape_keys:
                 shapekey = context.object.data.shape_keys.key_blocks[i]
                 shapekey.mute = bool(random.getrandbits(1))
@@ -247,7 +246,7 @@ class RandomEnableButton (Operator):
         return {'FINISHED'}
 
 
-class RandomizeValueButton (Operator):
+class SKE_OT_randomShapeKeyValue(Operator):
     bl_idname = "shapekeyextras.randomize"
     bl_label = "Randomize Shape Key Value"
     bl_description = "Randomize Shape Key Value for all Shape Keys in Selection"
@@ -258,7 +257,7 @@ class RandomizeValueButton (Operator):
         ske = scn.shape_key_extras
         
         if context.object.data.shape_keys:
-            shape_keys = (shape_key_selection(self, context))
+            shape_keys = shape_key_selection(self, context)
             for i in shape_keys:
                 if i != 'Basis':
                     shapekey = context.object.data.shape_keys.key_blocks[i]
@@ -270,33 +269,7 @@ class RandomizeValueButton (Operator):
         return {'FINISHED'}
 
 
-class ResetExcludeProperty (Operator):
-    bl_idname = "shapekeyextras.reset_exclude"
-    bl_label = "Revert to Default"
-    bl_description = "Revert to Default"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        scn = context.scene
-        ske = scn.shape_key_extras
-        ske.property_unset("sk_exclude")
-        return {'FINISHED'}
-
-
-class ResetOnlyProperty (Operator):
-    bl_idname = "shapekeyextras.reset_only"
-    bl_label = "Revert to Default"
-    bl_description = "Revert to Default"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        scn = context.scene
-        ske = scn.shape_key_extras
-        ske.property_unset("sk_only")
-        return {'FINISHED'}
-
-
-class SetRangeButton (Operator):
+class SKE_OT_setShapeKeyRange(Operator):
     bl_idname = "shapekeyextras.set_range"
     bl_label = "Set Shape Key Range"
     bl_description = "Set Range Values for Shape Keys in Selection"
@@ -307,7 +280,7 @@ class SetRangeButton (Operator):
         ske = scn.shape_key_extras
         
         if context.object.data.shape_keys:
-            shape_keys = (shape_key_selection(self, context))
+            shape_keys = shape_key_selection(self, context)
             for i in shape_keys:
                 if i != 'Basis':
                     shapekey = context.object.data.shape_keys.key_blocks[i]
@@ -320,7 +293,7 @@ class SetRangeButton (Operator):
         return {'FINISHED'}
     
 
-class ApplyValueButton (Operator):
+class SKE_OT_applyShapeKeyValue(Operator):
     bl_idname = "shapekeyextras.set_values"
     bl_label = "Set Shape Key Values"
     bl_description = "Assign static Values to all Shape Keys in Selection"
@@ -331,7 +304,7 @@ class ApplyValueButton (Operator):
         ske = scn.shape_key_extras
         
         if context.object.data.shape_keys:
-            shape_keys = (shape_key_selection(self, context))
+            shape_keys = shape_key_selection(self, context)
             for i in shape_keys:
                 if i != 'Basis':
                     shapekey = context.object.data.shape_keys.key_blocks[i]
@@ -343,7 +316,7 @@ class ApplyValueButton (Operator):
         return {'FINISHED'}
     
 
-class RemoveDriversFromShapeKeysButton (Operator):
+class SKE_OT_removeShapeKeyDriver(Operator):
     bl_idname = "shapekeyextras.remove_drivers"
     bl_label = "Remove Drivers"
     bl_description = "Remove Drivers from Shapekeys in Selection"
@@ -351,7 +324,7 @@ class RemoveDriversFromShapeKeysButton (Operator):
 
     def execute(self, context):
         if context.object.data.shape_keys:
-            shape_keys = (shape_key_selection(self, context))
+            shape_keys = shape_key_selection(self, context)
             for i in shape_keys:
                 if i != 'Basis':
                     context.object.data.shape_keys.key_blocks[i].driver_remove("value")
@@ -365,7 +338,7 @@ class RemoveDriversFromShapeKeysButton (Operator):
         return context.window_manager.invoke_confirm(self, event)
 
 
-class AddDriversToShapeKeysButton (Operator):
+class SKE_OT_addShapeKeyDriver(Operator):
     bl_idname = "shapekeyextras.add_drivers"
     bl_label = "Add Drivers"
     bl_description = "Add Drivers to Shapekeys in Selection"
@@ -373,7 +346,7 @@ class AddDriversToShapeKeysButton (Operator):
     
     def execute(self, context):
         if context.object.data.shape_keys:      
-            shape_keys = (shape_key_selection(self, context))
+            shape_keys = shape_key_selection(self, context)
             for i in shape_keys:
                 if i != 'Basis':
                     context.object.data.shape_keys.key_blocks[i].driver_add("value")
@@ -385,7 +358,7 @@ class AddDriversToShapeKeysButton (Operator):
 
 
 # http://stackoverflow.com/questions/7977550/how-to-change-the-value-of-the-shape-key-in-blender-script
-class InsertKeyframeButton (Operator):
+class SKE_OT_addShapeKeyKeyframe(Operator):
     bl_idname = "shapekeyextras.insert_keyframe"
     bl_label = "Insert Value Keyframe"
     bl_description = "Insert Keyframe (Shape Key Value) for all Shape Keys in Selection"
@@ -393,7 +366,7 @@ class InsertKeyframeButton (Operator):
     
     def execute(self, context):
         if context.object.data.shape_keys:       
-            shape_keys = (shape_key_selection(self, context))
+            shape_keys = shape_key_selection(self, context)
             for i in shape_keys:
                 if i != 'Basis':
                     context.object.data.shape_keys.key_blocks[i].keyframe_insert(data_path="value")
@@ -404,7 +377,7 @@ class InsertKeyframeButton (Operator):
         return {'FINISHED'}
 
 
-class DeleteKeyframeButton (Operator):
+class SKE_OT_deleteShapeKeyKeyframe (Operator):
     bl_idname = "shapekeyextras.delete_keyframe"
     bl_label = "Remove current Keyframe"
     bl_description = "Remove current Keyframe for all Shape Keys in Selection"
@@ -412,7 +385,7 @@ class DeleteKeyframeButton (Operator):
     
     def execute(self, context):
         if context.object.data.shape_keys:       
-            shape_keys = (shape_key_selection(self, context))
+            shape_keys = shape_key_selection(self, context)
             for i in shape_keys:
                 if i != 'Basis':
                     try:
@@ -429,7 +402,7 @@ class DeleteKeyframeButton (Operator):
 
 
 # http://blender.stackexchange.com/questions/5827/get-shape-key-from-action-or-fcurve-in-python
-class DeleteAllKeyframesButton (Operator):
+class SKE_OT_removeAllShapeKeyKeyframes(Operator):
     bl_idname = "shapekeyextras.delete_all_keyframes"
     bl_label = "Remove Animation"
     bl_description = "Remove all Value Keyframes for all Shape Keys in Selection"
@@ -438,7 +411,7 @@ class DeleteAllKeyframesButton (Operator):
     def execute(self, context):
         sce = context.scene
         if context.object.data.shape_keys:
-            shape_keys = (shape_key_selection(self, context))
+            shape_keys = shape_key_selection(self, context)
             sk_data = context.object.data.shape_keys
             for i in shape_keys:
                 if i != 'Basis' and sk_data.animation_data is not None:
@@ -455,7 +428,7 @@ class DeleteAllKeyframesButton (Operator):
         return context.window_manager.invoke_confirm(self, event)
 
 
-class RemoveSelectedKeysButton (Operator):
+class SKE_OT_removeShapeKeysSelected(Operator):
     bl_idname = "shapekeyextras.remove_selection"
     bl_label = "Remove Shape Keys"
     bl_description = "Remove all Shape Keys in Selection"
@@ -466,7 +439,7 @@ class RemoveSelectedKeysButton (Operator):
         ske = scn.shape_key_extras
         
         if context.object.data.shape_keys:
-            shape_keys = (shape_key_selection(self, context))
+            shape_keys = shape_key_selection(self, context)
             if len(shape_keys) > 0:
                 for i in shape_keys:            
                     shapekey_index = context.object.data.shape_keys.key_blocks.keys().index(i)
@@ -484,7 +457,7 @@ class RemoveSelectedKeysButton (Operator):
         return context.window_manager.invoke_confirm(self, event)
 
 
-class PrintShapeKeySelectionButton (Operator):
+class SKE_OT_printShapeKeySelection(Operator):
     bl_idname = "shapekeyextras.print_shape_key_selection"
     bl_label = "Print Selection to Console"
     bl_description = "Print Shape Key Selection to the Console"
@@ -492,7 +465,7 @@ class PrintShapeKeySelectionButton (Operator):
     
     def execute(self, context):
         if context.object.data.shape_keys:       
-            shape_keys = (shape_key_selection(self, context))
+            shape_keys = shape_key_selection(self, context)
             self.report({'INFO'}, ('Selection: %s' % (', '.join(shape_keys))))
             print ("Selection:", ', '.join(shape_keys))
         else:
@@ -500,14 +473,14 @@ class PrintShapeKeySelectionButton (Operator):
         return {'FINISHED'}
 
 
-class MoveShapeKey(bpy.types.Operator):
+class SKE_OT_moveShapeKey(bpy.types.Operator):
     bl_idname = "shapekeyextras.move_shapekey"
     bl_label = "Move Shape Key"
     bl_description = "Move Shape Key up or down by certain amount"
     bl_options = {'REGISTER', 'UNDO'}
     
-    steps = IntProperty()
-    action = EnumProperty(
+    steps: IntProperty()
+    action: EnumProperty(
         items=(
         ('DOWN','Down','', 'TRIA_DOWN', 1),
         ('UP','Up','', 'TRIA_UP', 2)
@@ -542,10 +515,10 @@ class MoveShapeKey(bpy.types.Operator):
 
 
 # -------------------------------------------------------------------
-# Vertex Group Operators    
+#   Vertex Group Operators    
 # -------------------------------------------------------------------
 
-class MergeVertexGroupUiList(Operator):
+class SKE_OT_mergeVertexGroups(Operator):
     bl_idname = "shapekeyextras.merge_vg_ui_list"
     bl_label = "Merge Groups"
     bl_description = "Merge all Groups in List"
@@ -559,7 +532,7 @@ class MergeVertexGroupUiList(Operator):
     
     def execute(self, context):
         group_input = {i.name for i in context.scene.shape_key_extras_collection if i.name}
-        ob = bpy.context.active_object
+        ob = context.active_object
 
         group_lookup = {g.index: g.name for g in ob.vertex_groups}
         group_candidates = {n for n in group_lookup.values() if n in group_input}
@@ -592,7 +565,7 @@ class MergeVertexGroupUiList(Operator):
             return{'CANCELLED'}
 
 
-class PrintVertexGroupUiList(Operator):
+class SKE_OT_printVertexGroups(Operator):
     bl_idname = "shapekeyextras.print_vg_ui_list"
     bl_label = "Print Selection"
     bl_description = "Print Vertex Group Selection to Console"
@@ -607,7 +580,7 @@ class PrintVertexGroupUiList(Operator):
         return{'FINISHED'}
 
 
-class AddAllGroupsToUiList(Operator):
+class SKE_OT_addVertexGroups(Operator):
     bl_idname = "shapekeyextras.add_all_vg_ui_list"
     bl_label = "Add All Groups"
     bl_description = "Add all Vertex Groups to the List"
@@ -643,7 +616,7 @@ class AddAllGroupsToUiList(Operator):
         return{'FINISHED'}
 
 
-class ClearVertexGroupUiList(Operator):
+class SKE_OT_clearVertexGroups(Operator):
     bl_idname = "shapekeyextras.clear_vg_ui_list"
     bl_label = "Clear List"
     bl_description = "Clear all Items in Vertex Group list"
@@ -665,11 +638,10 @@ class ClearVertexGroupUiList(Operator):
 
 
 # -------------------------------------------------------------------
-# Ui
+#   UI
 # -------------------------------------------------------------------
 
 def shapekey_panel_append(self, context):
-    
     if (context.object.data.shape_keys and
         context.mode == 'OBJECT'):
         
@@ -711,16 +683,16 @@ def shapekey_panel_append(self, context):
             if ske.sk_advanced_selection:
                 row = box_selection.row()
                 col = row.column(align=True)
-                
-                sub = col.row(align=True)
-                sub.prop(ske, "sk_exclude")
-                sub.operator("shapekeyextras.reset_exclude", text="", icon="DOT")
-                sub = col.row(align=True)
-                sub.prop(ske, "sk_only")
-                sub.operator("shapekeyextras.reset_only", text="", icon="DOT")
-                row = box_selection.row(align=True)
-                row.operator("shapekeyextras.print_shape_key_selection", icon="CONSOLE")
-            
+                rowsub = col.row(align=True)
+                rowsub = col.row(align=True)
+                rowsub.prop(ske, "sk_exclude")
+                rowsub = col.column(align=True)
+                rowsub.prop(ske, "sk_only")
+                row = box_selection.row()
+                col = box_selection.column(align=True)
+                rowsub = col.row(align=True)
+                rowsub.operator("shapekeyextras.print_shape_key_selection", icon="CONSOLE")
+
             col.separator()
             row = box_set_attributes.row()
             col = row.column(align=True)
@@ -753,12 +725,12 @@ def shapekey_panel_append(self, context):
         layout.separator()
 
 
-class ActionsVertexGroupUiList(Operator):
+class SKE_OT_vertexGroupActions(Operator):
     bl_idname = "shapekeyextras.action_vg_ui_list"
     bl_label = "Vertex Group List Actions"
     bl_options = {'REGISTER', 'UNDO'}
 
-    action = EnumProperty(
+    action: EnumProperty(
         items=(
             ('UP', "Up", ""),
             ('DOWN', "Down", ""),
@@ -819,17 +791,15 @@ class ActionsVertexGroupUiList(Operator):
         return {"FINISHED"}
 
 
-class VertexGroupUiList(UIList):
-
+class SKE_UL_vertexGroups(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        split = layout.split(.1)
+        split = layout.split(factor=0.1)
         split.scale_y = 1.1
-        split.label(str(index+1))
+        split.label(text=str(index+1))
         split.prop_search(item, "name", context.active_object, "vertex_groups", text="")
 
 
 def vertexgroup_panel_append(self, context):
-        
     if (context.active_object.type == 'MESH' and 
         len(context.active_object.vertex_groups) > 1 and
         context.mode == 'OBJECT'):
@@ -849,11 +819,11 @@ def vertexgroup_panel_append(self, context):
 
             rows = 4
             row = box_merge_vgroups.row() 
-            row.template_list("VertexGroupUiList", "", scn, "shape_key_extras_collection", ske, "vg_uilist_index", rows=rows)
+            row.template_list("SKE_UL_vertexGroups", "", scn, "shape_key_extras_collection", ske, "vg_uilist_index", rows=rows)
             
             col = row.column(align=True)
-            col.operator("shapekeyextras.action_vg_ui_list", icon='ZOOMIN', text="").action = 'ADD'
-            col.operator("shapekeyextras.action_vg_ui_list", icon='ZOOMOUT', text="").action = 'REMOVE'
+            col.operator("shapekeyextras.action_vg_ui_list", icon='ZOOM_IN', text="").action = 'ADD'
+            col.operator("shapekeyextras.action_vg_ui_list", icon='ZOOM_OUT', text="").action = 'REMOVE'
             col.separator()
             col.operator("shapekeyextras.action_vg_ui_list", icon='TRIA_UP', text="").action = 'UP'
             col.operator("shapekeyextras.action_vg_ui_list", icon='TRIA_DOWN', text="").action = 'DOWN'
@@ -882,10 +852,8 @@ class DrawShapeKeyListItem:
         key_block = item
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             
-            split = layout.split(.1)
-            split.label(str(index+1))
-            #split = split.split(.1)
-            #split.label(str(index+1))
+            split = layout.split(factor=0.1)
+            split.label(text=str(index+1))
             row = split.row(align=True)
             row.prop(key_block, "name", text="", emboss=False, icon_value=icon)
             
@@ -909,24 +877,58 @@ class DrawShapeKeyListItem:
 
 
 # -------------------------------------------------------------------
-# Register
+#   Register
 # -------------------------------------------------------------------
 
+classes = (
+    SKE_PG_sceneSettings,
+    SKE_PT_indexShapeKeys,
+    SKE_OT_enableShapeKeys,
+    SKE_OT_disableShapeKeys,
+    SKE_OT_toggleShapeKeys,
+    SKE_OT_randomShapeKeyEnable,
+    SKE_OT_randomShapeKeyValue,
+    SKE_OT_setShapeKeyRange,
+    SKE_OT_applyShapeKeyValue,
+    SKE_OT_removeShapeKeyDriver,
+    SKE_OT_addShapeKeyDriver,
+    SKE_OT_addShapeKeyKeyframe,
+    SKE_OT_deleteShapeKeyKeyframe,
+    SKE_OT_removeAllShapeKeyKeyframes,
+    SKE_OT_removeShapeKeysSelected,
+    SKE_OT_printShapeKeySelection,
+    SKE_OT_moveShapeKey,
+    SKE_OT_mergeVertexGroups,
+    SKE_OT_printVertexGroups,
+    SKE_OT_addVertexGroups,
+    SKE_OT_clearVertexGroups,
+    SKE_OT_vertexGroupActions,
+    SKE_UL_vertexGroups,
+    # DrawShapeKeyListItem,
+)
+
 def register():
-    bpy.utils.register_module(__name__)
+    from bpy.utils import register_class
+    for cls in classes:
+        register_class(cls)
+    
+    bpy.types.Scene.shape_key_extras = PointerProperty(type=SKE_PG_sceneSettings)
+    bpy.types.Scene.shape_key_extras_collection = CollectionProperty(type=SKE_PT_indexShapeKeys)
     bpy.types.DATA_PT_shape_keys.append(shapekey_panel_append)
     bpy.types.DATA_PT_vertex_groups.append(vertexgroup_panel_append)
-    bpy.types.Scene.shape_key_extras = PointerProperty(type=SkeSettings)
-    bpy.types.Scene.shape_key_extras_collection = CollectionProperty(type=SkePropertyCollection)
+    bpy.types.MESH_MT_shape_key_context_menu.append(shapekey_specials_append)
     bpy.types.MESH_UL_shape_keys.draw_item = DrawShapeKeyListItem.draw
-    bpy.types.MESH_MT_shape_key_specials.append(shapekey_specials_append)
 
 def unregister():
-    bpy.utils.unregister_module(__name__)
     bpy.types.DATA_PT_shape_keys.remove(shapekey_panel_append)
     bpy.types.DATA_PT_vertex_groups.remove(vertexgroup_panel_append)
-    bpy.types.MESH_MT_shape_key_specials.remove(shapekey_specials_append)
+    bpy.types.MESH_MT_shape_key_context_menu.remove(shapekey_specials_append)
     bpy.types.MESH_UL_shape_keys.draw_item = DrawShapeKeyListItem._draw
+
+    from bpy.utils import unregister_class
+    for cls in reversed(classes):
+        unregister_class(cls)
+
     del bpy.types.Scene.shape_key_extras_collection
     del bpy.types.Scene.shape_key_extras
 
